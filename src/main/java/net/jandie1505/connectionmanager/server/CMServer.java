@@ -1,11 +1,13 @@
 package net.jandie1505.connectionmanager.server;
 
+import net.jandie1505.connectionmanager.server.events.CMEvent;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CMServer implements {
+public class CMServer {
     private ServerSocket server;
     private List<CMServerClient> clients;
     private List<CMEventListener> globalListeners;
@@ -53,5 +55,9 @@ public class CMServer implements {
         for(CMServerClient client : this.clients) {
             client.close();
         }
+    }
+
+    private void fireEvent(CMEvent event) {
+
     }
 }
