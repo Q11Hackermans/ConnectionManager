@@ -4,6 +4,7 @@ import net.jandie1505.connectionmanager.client.actions.CMCAction;
 import net.jandie1505.connectionmanager.client.events.CMCClosedEvent;
 import net.jandie1505.connectionmanager.client.events.CMCCreatedEvent;
 import net.jandie1505.connectionmanager.client.events.CMCEvent;
+import net.jandie1505.connectionmanager.enums.CloseEventReason;
 import net.jandie1505.connectionmanager.server.CMSClientEventListener;
 
 import java.io.IOException;
@@ -28,11 +29,8 @@ public class CMCClient {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
                     if(socket.getInputStream().read() == -1) {
-                        close();
-                    }
-
-                    if(socket.isClosed()) {
-
+                        socket.close();
+                        fireEvent(new CMCClosedEvent(this, CloseEventReason.NO_RESPONSE));
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -76,7 +74,7 @@ public class CMCClient {
      * @throws IOException IOException
      */
     public void close() throws IOException {
-        this.fireEvent(new CMCClosedEvent(this));
+        this.fireEvent(new CMCClosedEvent(this, CloseEventReason.DISCONNECTED_BY_USER));
         this.socket.close();
     }
 

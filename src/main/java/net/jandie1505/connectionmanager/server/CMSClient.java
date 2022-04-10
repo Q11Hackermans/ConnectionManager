@@ -1,5 +1,6 @@
 package net.jandie1505.connectionmanager.server;
 
+import net.jandie1505.connectionmanager.enums.CloseEventReason;
 import net.jandie1505.connectionmanager.server.actions.CMSClientAction;
 import net.jandie1505.connectionmanager.server.events.CMSClientCloseEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientCreatedEvent;
@@ -34,6 +35,7 @@ public class CMSClient {
                 try {
                     if(socket.getInputStream().read() == -1) {
                         socket.close();
+                        fireEvent(new CMSClientCloseEvent(this, CloseEventReason.NO_RESPONSE));
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -79,8 +81,8 @@ public class CMSClient {
      * @throws IOException IOException
      */
     public void close() throws IOException {
-        this.fireEvent(new CMSClientCloseEvent(this));
         this.socket.close();
+        this.fireEvent(new CMSClientCloseEvent(this, CloseEventReason.DISCONNECTED_BY_USER));
     }
 
     /**
