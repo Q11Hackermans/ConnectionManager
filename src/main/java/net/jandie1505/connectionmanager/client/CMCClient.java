@@ -55,7 +55,7 @@ public class CMCClient {
 
     /**
      * Add an EventListener
-     * @param listener CMEventListener
+     * @param listener CMCEventListener
      */
     public void addEventListener(CMCEventListener listener) {
         this.listeners.add(listener);
@@ -63,10 +63,26 @@ public class CMCClient {
 
     /**
      * Remove an EventListener
-     * @param listener CMEventListener
+     * @param listener CMCEventListener
      */
-    public void removeEventListener(CMSClientEventListener listener) {
+    public void removeEventListener(CMCEventListener listener) {
         this.listeners.remove(listener);
+    }
+
+    /**
+     * Add an Action
+     * @param listener CMCACtion
+     */
+    public void addAction(CMCAction listener) {
+        this.actions.add(listener);
+    }
+
+    /**
+     * Remove an Action
+     * @param listener CMCAction
+     */
+    public void removeAction(CMCAction listener) {
+        this.actions.remove(listener);
     }
 
     /**
