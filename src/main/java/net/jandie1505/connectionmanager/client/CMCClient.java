@@ -19,13 +19,15 @@ public class CMCClient {
     private Socket socket;
     private List<CMCEventListener> listeners;
     private List<CMCAction> actions;
+    private Thread managerThread;
+    private Thread actionThread;
 
     public CMCClient(String host, int port) throws IOException {
         this.socket = new Socket(host, port);
         this.listeners = new ArrayList<>();
         this.actions = new ArrayList<>();
 
-        new Thread(() -> {
+        managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
                     if(socket.getInputStream().read() == -1) {
@@ -39,12 +41,15 @@ public class CMCClient {
                     } catch (IOException ex) {
                         ex.printStackTrace();
                         fireEvent(new CMCClosedEvent(this, CloseEventReason.ERROR));
+                        managerThread.interrupt();
+                        actionThread.interrupt();
                     }
                 }
             }
-        }).start();
+        });
+        managerThread.start();
 
-        new Thread(() -> {
+        actionThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
                     for(CMCAction action : actions) {
@@ -54,7 +59,8 @@ public class CMCClient {
                     e.printStackTrace();
                 }
             }
-        }).start();
+        });
+        actionThread.start();
 
         this.fireEvent(new CMCCreatedEvent(this));
     }
