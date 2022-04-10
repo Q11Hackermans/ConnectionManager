@@ -30,10 +30,16 @@ public class CMCClient {
                 try {
                     if(socket.getInputStream().read() == -1) {
                         socket.close();
-                        fireEvent(new CMCClosedEvent(this, CloseEventReason.NO_RESPONSE));
+                        fireEvent(new CMCClosedEvent(this, CloseEventReason.DISCONNECTED_BY_REMOTE));
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    try {
+                        socket.close();
+                        fireEvent(new CMCClosedEvent(this, CloseEventReason.CONNECTION_RESET));
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                        fireEvent(new CMCClosedEvent(this, CloseEventReason.ERROR));
+                    }
                 }
             }
         }).start();
@@ -90,7 +96,7 @@ public class CMCClient {
      * @throws IOException IOException
      */
     public void close() throws IOException {
-        this.fireEvent(new CMCClosedEvent(this, CloseEventReason.DISCONNECTED_BY_USER));
+        this.fireEvent(new CMCClosedEvent(this, CloseEventReason.CONNECTION_CLOSED));
         this.socket.close();
     }
 

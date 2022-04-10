@@ -22,13 +22,8 @@ public class CMSStringMessageSender {
         out.println(message);
     }
 
-    public void close() {
-        out.close();
-    }
-
     public static void sendMessage(CMSClient client, String message) throws IOException {
         CMSStringMessageSender messageSender = new CMSStringMessageSender(client);
         messageSender.sendStringMessage(message);
-        messageSender.close();
     }
 }
