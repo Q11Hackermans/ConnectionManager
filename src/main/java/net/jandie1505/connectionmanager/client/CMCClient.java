@@ -1,46 +1,49 @@
-package net.jandie1505.connectionmanager.server;
+package net.jandie1505.connectionmanager.client;
 
-import net.jandie1505.connectionmanager.server.actions.CMSClientAction;
-import net.jandie1505.connectionmanager.server.events.CMSClientCloseEvent;
-import net.jandie1505.connectionmanager.server.events.CMSClientCreatedEvent;
-import net.jandie1505.connectionmanager.server.events.CMSClientEvent;
+import net.jandie1505.connectionmanager.client.actions.CMCAction;
+import net.jandie1505.connectionmanager.client.events.CMCClosedEvent;
+import net.jandie1505.connectionmanager.client.events.CMCCreatedEvent;
+import net.jandie1505.connectionmanager.client.events.CMCEvent;
+import net.jandie1505.connectionmanager.server.CMSClientEventListener;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-public class CMSClient {
-    UUID id;
+public class CMCClient {
     private Socket socket;
-    private List<CMSClientEventListener> listeners;
-    private List<CMSClientAction> actions;
+    private List<CMCEventListener> listeners;
+    private List<CMCAction> actions;
 
-    public CMSClient(Socket socket) {
-        this.id = UUID.randomUUID();
-        listeners = new ArrayList<>();
-        actions = new ArrayList<>();
-        this.socket = socket;
-
-        this.fireEvent(new CMSClientCreatedEvent(this));
+    public CMCClient(String host, int port) throws IOException {
+        this.socket = new Socket(host, port);
+        this.listeners = new ArrayList<>();
+        this.actions = new ArrayList<>();
 
         new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
                     if(socket.getInputStream().read() == -1) {
-                        socket.close();
+                        close();
+                    }
+
+                    if(socket.isClosed()) {
+
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        }).start();
 
+        new Thread(() -> {
+            while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
-                    for(CMSClientAction action : actions) {
+                    for(CMCAction action : actions) {
                         action.run(this);
                     }
                 } catch(Exception e) {
@@ -48,21 +51,15 @@ public class CMSClient {
                 }
             }
         }).start();
-    }
 
-    /**
-     * Get the unique ID of the client
-     * @return Unique ID (UUID)
-     */
-    public UUID getUniqueId() {
-        return this.id;
+        this.fireEvent(new CMCCreatedEvent(this));
     }
 
     /**
      * Add an EventListener
      * @param listener CMEventListener
      */
-    public void addEventListener(CMSClientEventListener listener) {
+    public void addEventListener(CMCEventListener listener) {
         this.listeners.add(listener);
     }
 
@@ -79,7 +76,7 @@ public class CMSClient {
      * @throws IOException IOException
      */
     public void close() throws IOException {
-        this.fireEvent(new CMSClientCloseEvent(this));
+        this.fireEvent(new CMCClosedEvent(this));
         this.socket.close();
     }
 
@@ -139,8 +136,8 @@ public class CMSClient {
      * Fire an event to all event listeners
      * @param event Event
      */
-    public void fireEvent(CMSClientEvent event) {
-        for(CMSClientEventListener listener : this.listeners) {
+    public void fireEvent(CMCEvent event) {
+        for(CMCEventListener listener : this.listeners) {
             listener.onEvent(event);
         }
     }
