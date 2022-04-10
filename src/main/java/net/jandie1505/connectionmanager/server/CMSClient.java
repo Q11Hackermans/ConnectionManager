@@ -1,31 +1,33 @@
 package net.jandie1505.connectionmanager.server;
 
-import net.jandie1505.connectionmanager.server.actions.CMAction;
-import net.jandie1505.connectionmanager.server.events.CMClientCloseEvent;
-import net.jandie1505.connectionmanager.server.events.CMClientCreatedEvent;
-import net.jandie1505.connectionmanager.server.events.CMEvent;
+import net.jandie1505.connectionmanager.server.actions.CMSClientAction;
+import net.jandie1505.connectionmanager.server.events.CMSClientCloseEvent;
+import net.jandie1505.connectionmanager.server.events.CMSClientCreatedEvent;
+import net.jandie1505.connectionmanager.server.events.CMSClientEvent;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class CMServerClient {
+public class CMSClient {
     UUID id;
     private Socket socket;
-    private List<CMEventListener> listeners;
-    private List<CMAction> actions;
+    private List<CMSClientEventListener> listeners;
+    private List<CMSClientAction> actions;
 
-    public CMServerClient(Socket socket) {
+    public CMSClient(Socket socket) {
         this.id = UUID.randomUUID();
         listeners = new ArrayList<>();
         actions = new ArrayList<>();
         this.socket = socket;
 
-        this.fireEvent(new CMClientCreatedEvent(this));
+        this.fireEvent(new CMSClientCreatedEvent(this));
 
         new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
@@ -38,7 +40,7 @@ public class CMServerClient {
                 }
 
                 try {
-                    for(CMAction action : actions) {
+                    for(CMSClientAction action : actions) {
                         action.run(this);
                     }
                 } catch(Exception e) {
@@ -60,7 +62,7 @@ public class CMServerClient {
      * Add an EventListener
      * @param listener CMEventListener
      */
-    public void addEventListener(CMEventListener listener) {
+    public void addEventListener(CMSClientEventListener listener) {
         this.listeners.add(listener);
     }
 
@@ -68,7 +70,7 @@ public class CMServerClient {
      * Remove an EventListener
      * @param listener CMEventListener
      */
-    public void removeEventListener(CMEventListener listener) {
+    public void removeEventListener(CMSClientEventListener listener) {
         this.listeners.remove(listener);
     }
 
@@ -77,7 +79,7 @@ public class CMServerClient {
      * @throws IOException IOException
      */
     public void close() throws IOException {
-        this.fireEvent(new CMClientCloseEvent(this));
+        this.fireEvent(new CMSClientCloseEvent(this));
         this.socket.close();
     }
 
@@ -108,6 +110,22 @@ public class CMServerClient {
     }
 
     /**
+     * Get the IP Address
+     * @return InetAddress
+     */
+    public InetAddress getIP() {
+        return this.socket.getInetAddress();
+    }
+
+    /**
+     * Get the port
+     * @return Port
+     */
+    public int getPort() {
+        return this.socket.getPort();
+    }
+
+    /**
      * Get socket
      * @return Socket
      * @deprecated use other methods if possible
@@ -121,8 +139,8 @@ public class CMServerClient {
      * Fire an event to all event listeners
      * @param event Event
      */
-    public void fireEvent(CMEvent event) {
-        for(CMEventListener listener : this.listeners) {
+    public void fireEvent(CMSClientEvent event) {
+        for(CMSClientEventListener listener : this.listeners) {
             listener.onEvent(event);
         }
     }
