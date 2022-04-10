@@ -44,12 +44,24 @@ public class CMSClient {
         this.managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
+                    if(!socket.isConnected()) {
+                        socket.close();
+                        fireEvent(new CMSClientCloseEvent(this, CloseEventReason.CONNECTION_FAILED));
+                    }
                     if(socket.getInputStream().read() == -1) {
                         socket.close();
-                        fireEvent(new CMSClientCloseEvent(this, CloseEventReason.NO_RESPONSE));
+                        fireEvent(new CMSClientCloseEvent(this, CloseEventReason.DISCONNECTED_BY_REMOTE));
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    try {
+                        socket.close();
+                        fireEvent(new CMSClientCloseEvent(this, CloseEventReason.CONNECTION_RESET));
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                        fireEvent(new CMSClientCloseEvent(this, CloseEventReason.ERROR));
+                        managerThread.interrupt();
+                        actionThread.interrupt();
+                    }
                 }
             }
         });
@@ -133,7 +145,7 @@ public class CMSClient {
      */
     public void close() throws IOException {
         this.socket.close();
-        this.fireEvent(new CMSClientCloseEvent(this, CloseEventReason.DISCONNECTED_BY_USER));
+        this.fireEvent(new CMSClientCloseEvent(this, CloseEventReason.CONNECTION_CLOSED));
     }
 
     /**
