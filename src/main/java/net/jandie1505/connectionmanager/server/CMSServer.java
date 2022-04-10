@@ -49,14 +49,7 @@ public class CMSServer {
                 System.out.println(Thread.currentThread().isInterrupted());
                 while(!Thread.currentThread().isInterrupted()) {
                     try {
-                        CMSClient client = new CMSClient(server.accept());
-                        clients.add(client);
-                        for(CMSClientEventListener listener : globalClientListeners) {
-                            client.addEventListener(listener);
-                        }
-                        for(CMSClientAction action : globalClientActions) {
-                            client.addAction(action);
-                        }
+                        clients.add(new CMSClient(server.accept(), globalClientListeners, globalClientActions));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

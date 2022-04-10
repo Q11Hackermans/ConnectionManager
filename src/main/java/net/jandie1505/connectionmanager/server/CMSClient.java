@@ -24,12 +24,22 @@ public class CMSClient {
     private Thread actionThread;
 
     public CMSClient(Socket socket) {
-        this.id = UUID.randomUUID();
-        listeners = new ArrayList<>();
-        actions = new ArrayList<>();
-        this.socket = socket;
+        this.listeners = new ArrayList<>();
+        this.actions = new ArrayList<>();
+        setup(socket);
+    }
 
-        this.fireEvent(new CMSClientCreatedEvent(this));
+    public CMSClient(Socket socket, List<CMSClientEventListener> listeners, List<CMSClientAction> actions) {
+        this.listeners = new ArrayList<>();
+        this.listeners.addAll(listeners);
+        this.actions = new ArrayList<>();
+        this.actions.addAll(actions);
+        setup(socket);
+    }
+
+    private void setup(Socket socket) {
+        this.id = UUID.randomUUID();
+        this.socket = socket;
 
         this.managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
@@ -57,6 +67,8 @@ public class CMSClient {
             }
         });
         actionThread.start();
+
+        this.fireEvent(new CMSClientCreatedEvent(this));
     }
 
     /**
