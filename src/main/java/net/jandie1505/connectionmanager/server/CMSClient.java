@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +20,8 @@ public class CMSClient {
     private Socket socket;
     private List<CMSClientEventListener> listeners;
     private List<CMSClientAction> actions;
+    private Thread managerThread;
+    private Thread actionThread;
 
     public CMSClient(Socket socket) {
         this.id = UUID.randomUUID();
@@ -30,7 +31,7 @@ public class CMSClient {
 
         this.fireEvent(new CMSClientCreatedEvent(this));
 
-        new Thread(() -> {
+        this.managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
                     if(socket.getInputStream().read() == -1) {
@@ -40,7 +41,12 @@ public class CMSClient {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        });
+        managerThread.start();
 
+        this.actionThread = new Thread(() -> {
+            while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
                     for(CMSClientAction action : actions) {
                         action.run(this);
@@ -49,7 +55,8 @@ public class CMSClient {
                     e.printStackTrace();
                 }
             }
-        }).start();
+        });
+        actionThread.start();
     }
 
     /**
@@ -167,6 +174,22 @@ public class CMSClient {
     @Deprecated
     public Socket getSocket() {
         return this.socket;
+    }
+
+    /**
+     * Returns true if the manager thread is running
+     * @return Manager thread alive
+     */
+    public boolean managerThreadAlive() {
+        return managerThread.isAlive();
+    }
+
+    /**
+     * Returns true if the action thread is alive
+     * @return Action thread alive
+     */
+    public boolean actionThreadAlive() {
+        return actionThread.isAlive();
     }
 
     /**
