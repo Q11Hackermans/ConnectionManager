@@ -2,6 +2,7 @@ package net.jandie1505.connectionmanager.server;
 
 import net.jandie1505.connectionmanager.server.actions.CMSClientAction;
 import net.jandie1505.connectionmanager.server.events.CMSServerEvent;
+import net.jandie1505.connectionmanager.server.events.CMSServerStartListeningEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerStopListeningEvent;
 
 import java.io.IOException;
@@ -25,8 +26,13 @@ public class CMSServer {
 
     // CODE
     public CMSServer(int port) throws IOException {
-        this.clients = new ArrayList<>();
         this.server = new ServerSocket(port);
+        this.clients = new ArrayList<>();
+
+        this.listeners = new ArrayList<>();
+
+        this.globalClientListeners = new ArrayList<>();
+        this.globalClientActions = new ArrayList<>();
     }
 
     /**
@@ -47,6 +53,9 @@ public class CMSServer {
                         for(CMSClientEventListener listener : globalClientListeners) {
                             client.addEventListener(listener);
                         }
+                        for(CMSClientAction action : globalClientActions) {
+                            client.addAction(action);
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -66,6 +75,8 @@ public class CMSServer {
         });
         garbageCollection.setDaemon(true);
         garbageCollection.start();
+
+        fireEvent(new CMSServerStartListeningEvent(this));
     }
 
     /**

@@ -62,7 +62,7 @@ public class CMSClient {
 
     /**
      * Add an EventListener
-     * @param listener CMEventListener
+     * @param listener CMSClientEventListener
      */
     public void addEventListener(CMSClientEventListener listener) {
         this.listeners.add(listener);
@@ -70,10 +70,42 @@ public class CMSClient {
 
     /**
      * Remove an EventListener
-     * @param listener CMEventListener
+     * @param listener CMSClientEventListener
      */
     public void removeEventListener(CMSClientEventListener listener) {
         this.listeners.remove(listener);
+    }
+
+    /**
+     * Get the event listeners
+     * @return Listener list
+     */
+    public List<CMSClientEventListener> getListeners() {
+        return this.listeners;
+    }
+
+    /**
+     * Add an action
+     * @param action CMSAction
+     */
+    public void addAction(CMSClientAction action) {
+        this.actions.add(action);
+    }
+
+    /**
+     * Remove an action
+     * @param action CMSAction
+     */
+    public void removeAction(CMSClientAction action) {
+        this.actions.remove(action);
+    }
+
+    /**
+     * Get the action list
+     * @return Action list
+     */
+    public List<CMSClientAction> getActions() {
+        return this.actions;
     }
 
     /**
