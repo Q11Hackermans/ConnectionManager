@@ -120,6 +120,78 @@ public class CMSServer {
         }
     }
 
+    /**
+     * Add a server listener
+     * @param listener listener
+     */
+    public void addListener(CMSServerEventListener listener) {
+        this.listeners.add(listener);
+    }
+
+    /**
+     * Remove a server listener
+     * @param listener listener
+     */
+    public void removeListener(CMSServerEventListener listener) {
+        this.listeners.remove(listener);
+    }
+
+    /**
+     * Get a list of all server listeners
+     * @return list of listeners
+     */
+    public List<CMSServerEventListener> listListeners() {
+        return this.listeners;
+    }
+
+    /**
+     * Add a global client listener
+     * @param listener listener
+     */
+    public void addGlobalListener(CMSClientEventListener listener) {
+        this.globalClientListeners.add(listener);
+    }
+
+    /**
+     * Remove a global client listener
+     * @param listener listener
+     */
+    public void removeGlobalListener(CMSClientEventListener listener) {
+        this.globalClientListeners.remove(listener);
+    }
+
+    /**
+     * Get a list of global client listeners
+     * @return list of listeners
+     */
+    public List<CMSClientEventListener> listGlobalListeners() {
+        return this.globalClientListeners;
+    }
+
+    /**
+     * Add a global client action
+     * @param listener action
+     */
+    public void addGlobalAction(CMSClientAction listener) {
+        this.globalClientActions.add(listener);
+    }
+
+    /**
+     * Remove a global client action
+     * @param listener action
+     */
+    public void removeGlobalAction(CMSClientAction listener) {
+        this.globalClientActions.remove(listener);
+    }
+
+    /**
+     * Get a list of global client actions
+     * @return list of actions
+     */
+    public List<CMSClientAction> listGlobalAction() {
+        return this.globalClientActions;
+    }
+
     private void fireEvent(CMSServerEvent event) {
         for(CMSServerEventListener listener : this.listeners) {
             listener.onEvent(event);
