@@ -46,6 +46,7 @@ public class CMSServer {
         this.thread = new Thread(new Runnable() {
             @Override
             public void run() {
+                System.out.println(Thread.currentThread().isInterrupted());
                 while(!Thread.currentThread().isInterrupted()) {
                     try {
                         CMSClient client = new CMSClient(server.accept());
@@ -62,6 +63,7 @@ public class CMSServer {
                 }
             }
         });
+        this.thread.start();
 
         // This will remove all clients which are disconnected
         Thread garbageCollection = new Thread(new Runnable() {
