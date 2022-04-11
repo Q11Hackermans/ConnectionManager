@@ -7,14 +7,15 @@ import net.jandie1505.connectionmanager.server.events.CMSClientEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientInputReceivedEvent;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Server-side client (CMS = ConnectionManager Server)
+ */
 public class CMSClient {
     UUID id;
     private Socket socket;

@@ -7,21 +7,46 @@ import net.jandie1505.connectionmanager.client.events.CMCInputReceivedEvent;
 import net.jandie1505.connectionmanager.enums.CloseEventReason;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
+/**
+ * Client-side client (CMC = ConnectionManager Client)
+ */
 public class CMCClient {
     private Socket socket;
     private List<CMCEventListener> listeners;
     private Thread managerThread;
 
+    /**
+     * Create a client.
+     * @param host Host
+     * @param port Port
+     * @throws IOException IOException of the socket
+     */
     public CMCClient(String host, int port) throws IOException {
-        this.socket = new Socket(host, port);
         this.listeners = new ArrayList<>();
+        setup(host, port);
+    }
+    /**
+     * Create a client with a pre-defined list of listeners.
+     * This will make it possible to receive the CMCCreatedEvent.
+     * @param host Host
+     * @param port Port
+     * @param listeners Collection of event listeners
+     * @throws IOException IOException of the socket
+     */
+    public CMCClient(String host, int port, Collection<CMCEventListener> listeners) throws IOException {
+        this.listeners = new ArrayList<>();
+        this.listeners.addAll(listeners);
+        setup(host, port);
+    }
+
+    private void setup(String host, int port) throws IOException {
+        this.socket = new Socket(host, port);
 
         managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {

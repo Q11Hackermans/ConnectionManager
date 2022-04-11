@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Server (CMS = ConnectionManager Server)
+ */
 public class CMSServer {
     // BASIC THINGS
     private ServerSocket server;
