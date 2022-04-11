@@ -11,7 +11,7 @@ public class CMSStringMessageSender {
 
     public CMSStringMessageSender(CMSClient client) throws IOException {
         this.client = client;
-        out = new PrintWriter(this.client.getOutputStream(), true);
+        out = new PrintWriter(this.client.getSocket().getOutputStream(), true);
     }
 
     public CMSClient getClient() {

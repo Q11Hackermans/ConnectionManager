@@ -76,21 +76,12 @@ public class CMCClient {
     }
 
     /**
-     * Get the InputStream
-     * @return InputStream
+     * Send byte via OutputStream
+     * @param data byte
      * @throws IOException IOException
      */
-    public InputStream getInputStream() throws IOException {
-        return this.socket.getInputStream();
-    }
-
-    /**
-     * Get the OutputStream
-     * @return OutputStream
-     * @throws IOException IOException
-     */
-    public OutputStream getOutputStream() throws IOException {
-        return this.socket.getOutputStream();
+    public void sendByte(int data) throws IOException {
+        this.socket.getOutputStream().write(data);
     }
 
     /**
