@@ -1,10 +1,10 @@
 package net.jandie1505.connectionmanager.server;
 
 import net.jandie1505.connectionmanager.enums.CloseEventReason;
-import net.jandie1505.connectionmanager.server.actions.CMSClientAction;
 import net.jandie1505.connectionmanager.server.events.CMSClientCloseEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientCreatedEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientEvent;
+import net.jandie1505.connectionmanager.server.events.CMSClientInputReceivedEvent;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,21 +19,16 @@ public class CMSClient {
     UUID id;
     private Socket socket;
     private List<CMSClientEventListener> listeners;
-    private List<CMSClientAction> actions;
     private Thread managerThread;
-    private Thread actionThread;
 
     public CMSClient(Socket socket) {
         this.listeners = new ArrayList<>();
-        this.actions = new ArrayList<>();
         setup(socket);
     }
 
-    public CMSClient(Socket socket, List<CMSClientEventListener> listeners, List<CMSClientAction> actions) {
+    public CMSClient(Socket socket, List<CMSClientEventListener> listeners) {
         this.listeners = new ArrayList<>();
         this.listeners.addAll(listeners);
-        this.actions = new ArrayList<>();
-        this.actions.addAll(actions);
         setup(socket);
     }
 
@@ -48,9 +43,13 @@ public class CMSClient {
                         socket.close();
                         fireEvent(new CMSClientCloseEvent(this, CloseEventReason.CONNECTION_FAILED));
                     }
-                    if(socket.getInputStream().read() == -1) {
+
+                    int input = socket.getInputStream().read();
+                    if(input == -1) {
                         socket.close();
                         fireEvent(new CMSClientCloseEvent(this, CloseEventReason.DISCONNECTED_BY_REMOTE));
+                    } else {
+                        fireEvent(new CMSClientInputReceivedEvent(this, input));
                     }
                 } catch (IOException e) {
                     try {
@@ -60,25 +59,11 @@ public class CMSClient {
                         ex.printStackTrace();
                         fireEvent(new CMSClientCloseEvent(this, CloseEventReason.ERROR));
                         managerThread.interrupt();
-                        actionThread.interrupt();
                     }
                 }
             }
         });
         managerThread.start();
-
-        this.actionThread = new Thread(() -> {
-            while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
-                try {
-                    for(CMSClientAction action : actions) {
-                        action.run(this);
-                    }
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        actionThread.start();
 
         this.fireEvent(new CMSClientCreatedEvent(this));
     }
@@ -113,30 +98,6 @@ public class CMSClient {
      */
     public List<CMSClientEventListener> getListeners() {
         return this.listeners;
-    }
-
-    /**
-     * Add an action
-     * @param action CMSAction
-     */
-    public void addAction(CMSClientAction action) {
-        this.actions.add(action);
-    }
-
-    /**
-     * Remove an action
-     * @param action CMSAction
-     */
-    public void removeAction(CMSClientAction action) {
-        this.actions.remove(action);
-    }
-
-    /**
-     * Get the action list
-     * @return Action list
-     */
-    public List<CMSClientAction> getActions() {
-        return this.actions;
     }
 
     /**
@@ -209,18 +170,10 @@ public class CMSClient {
     }
 
     /**
-     * Returns true if the action thread is alive
-     * @return Action thread alive
-     */
-    public boolean actionThreadAlive() {
-        return actionThread.isAlive();
-    }
-
-    /**
      * Fire an event to all event listeners
      * @param event Event
      */
-    public void fireEvent(CMSClientEvent event) {
+    private void fireEvent(CMSClientEvent event) {
         for(CMSClientEventListener listener : this.listeners) {
             listener.onEvent(event);
         }

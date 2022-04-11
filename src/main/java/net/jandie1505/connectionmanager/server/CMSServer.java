@@ -1,6 +1,5 @@
 package net.jandie1505.connectionmanager.server;
 
-import net.jandie1505.connectionmanager.server.actions.CMSClientAction;
 import net.jandie1505.connectionmanager.server.events.CMSServerEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerStartListeningEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerStopListeningEvent;
@@ -22,7 +21,6 @@ public class CMSServer {
 
     // CLIENT SPECIFIC THINGS
     private List<CMSClientEventListener> globalClientListeners;
-    private List<CMSClientAction> globalClientActions;
 
     // CODE
     public CMSServer(int port) throws IOException {
@@ -32,7 +30,6 @@ public class CMSServer {
         this.listeners = new ArrayList<>();
 
         this.globalClientListeners = new ArrayList<>();
-        this.globalClientActions = new ArrayList<>();
     }
 
     /**
@@ -46,10 +43,9 @@ public class CMSServer {
         this.thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                System.out.println(Thread.currentThread().isInterrupted());
                 while(!Thread.currentThread().isInterrupted()) {
                     try {
-                        clients.add(new CMSClient(server.accept(), globalClientListeners, globalClientActions));
+                        clients.add(new CMSClient(server.accept(), globalClientListeners));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -161,30 +157,6 @@ public class CMSServer {
      */
     public List<CMSClientEventListener> listGlobalListeners() {
         return this.globalClientListeners;
-    }
-
-    /**
-     * Add a global client action
-     * @param listener action
-     */
-    public void addGlobalAction(CMSClientAction listener) {
-        this.globalClientActions.add(listener);
-    }
-
-    /**
-     * Remove a global client action
-     * @param listener action
-     */
-    public void removeGlobalAction(CMSClientAction listener) {
-        this.globalClientActions.remove(listener);
-    }
-
-    /**
-     * Get a list of global client actions
-     * @return list of actions
-     */
-    public List<CMSClientAction> listGlobalAction() {
-        return this.globalClientActions;
     }
 
     private void fireEvent(CMSServerEvent event) {

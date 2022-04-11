@@ -1,11 +1,10 @@
 package net.jandie1505.connectionmanager.client;
 
-import net.jandie1505.connectionmanager.client.actions.CMCAction;
 import net.jandie1505.connectionmanager.client.events.CMCClosedEvent;
 import net.jandie1505.connectionmanager.client.events.CMCCreatedEvent;
 import net.jandie1505.connectionmanager.client.events.CMCEvent;
+import net.jandie1505.connectionmanager.client.events.CMCInputReceivedEvent;
 import net.jandie1505.connectionmanager.enums.CloseEventReason;
-import net.jandie1505.connectionmanager.server.CMSClientEventListener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,21 +17,21 @@ import java.util.List;
 public class CMCClient {
     private Socket socket;
     private List<CMCEventListener> listeners;
-    private List<CMCAction> actions;
     private Thread managerThread;
-    private Thread actionThread;
 
     public CMCClient(String host, int port) throws IOException {
         this.socket = new Socket(host, port);
         this.listeners = new ArrayList<>();
-        this.actions = new ArrayList<>();
 
         managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
-                    if(socket.getInputStream().read() == -1) {
+                    int input = socket.getInputStream().read();
+                    if(input == -1) {
                         socket.close();
                         fireEvent(new CMCClosedEvent(this, CloseEventReason.DISCONNECTED_BY_REMOTE));
+                    } else {
+                        fireEvent(new CMCInputReceivedEvent(this, input));
                     }
                 } catch (IOException e) {
                     try {
@@ -42,25 +41,11 @@ public class CMCClient {
                         ex.printStackTrace();
                         fireEvent(new CMCClosedEvent(this, CloseEventReason.ERROR));
                         managerThread.interrupt();
-                        actionThread.interrupt();
                     }
                 }
             }
         });
         managerThread.start();
-
-        actionThread = new Thread(() -> {
-            while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
-                try {
-                    for(CMCAction action : actions) {
-                        action.run(this);
-                    }
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        actionThread.start();
 
         this.fireEvent(new CMCCreatedEvent(this));
     }
@@ -79,22 +64,6 @@ public class CMCClient {
      */
     public void removeEventListener(CMCEventListener listener) {
         this.listeners.remove(listener);
-    }
-
-    /**
-     * Add an Action
-     * @param listener CMCACtion
-     */
-    public void addAction(CMCAction listener) {
-        this.actions.add(listener);
-    }
-
-    /**
-     * Remove an Action
-     * @param listener CMCAction
-     */
-    public void removeAction(CMCAction listener) {
-        this.actions.remove(listener);
     }
 
     /**
@@ -162,7 +131,7 @@ public class CMCClient {
      * Fire an event to all event listeners
      * @param event Event
      */
-    public void fireEvent(CMCEvent event) {
+    private void fireEvent(CMCEvent event) {
         for(CMCEventListener listener : this.listeners) {
             listener.onEvent(event);
         }
