@@ -4,7 +4,7 @@ import net.jandie1505.connectionmanager.enums.CloseEventReason;
 import net.jandie1505.connectionmanager.server.events.CMSClientCloseEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientCreatedEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientEvent;
-import net.jandie1505.connectionmanager.server.events.CMSClientInputReceivedEvent;
+import net.jandie1505.connectionmanager.server.events.CMSClientByteReceivedEvent;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -50,7 +50,8 @@ public class CMSClient {
                         socket.close();
                         fireEvent(new CMSClientCloseEvent(this, CloseEventReason.DISCONNECTED_BY_REMOTE));
                     } else {
-                        fireEvent(new CMSClientInputReceivedEvent(this, input));
+                        onByteReceived(input);
+                        fireEvent(new CMSClientByteReceivedEvent(this, input));
                     }
                 } catch (IOException e) {
                     try {
@@ -159,6 +160,16 @@ public class CMSClient {
      */
     public boolean managerThreadAlive() {
         return managerThread.isAlive();
+    }
+
+    // PRIVATE
+
+    /**
+     * This method is similar to the CMSClientByteReceivedEvent
+     * @param data byte
+     */
+    private void onByteReceived(int data) {
+
     }
 
     /**

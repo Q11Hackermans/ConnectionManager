@@ -2,10 +2,10 @@ package net.jandie1505.connectionmanager.server.events;
 
 import net.jandie1505.connectionmanager.server.CMSClient;
 
-public class CMSClientInputReceivedEvent extends CMSClientEvent {
+public class CMSClientByteReceivedEvent extends CMSClientEvent {
     int data;
 
-    public CMSClientInputReceivedEvent(CMSClient client, int data) {
+    public CMSClientByteReceivedEvent(CMSClient client, int data) {
         super(client);
         this.data = data;
     }

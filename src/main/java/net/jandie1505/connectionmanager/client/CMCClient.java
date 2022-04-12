@@ -3,7 +3,7 @@ package net.jandie1505.connectionmanager.client;
 import net.jandie1505.connectionmanager.client.events.CMCClosedEvent;
 import net.jandie1505.connectionmanager.client.events.CMCCreatedEvent;
 import net.jandie1505.connectionmanager.client.events.CMCEvent;
-import net.jandie1505.connectionmanager.client.events.CMCInputReceivedEvent;
+import net.jandie1505.connectionmanager.client.events.CMCByteReceivedEvent;
 import net.jandie1505.connectionmanager.enums.CloseEventReason;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ public class CMCClient {
                         socket.close();
                         fireEvent(new CMCClosedEvent(this, CloseEventReason.DISCONNECTED_BY_REMOTE));
                     } else {
-                        fireEvent(new CMCInputReceivedEvent(this, input));
+                        fireEvent(new CMCByteReceivedEvent(this, input));
                     }
                 } catch (IOException e) {
                     try {
@@ -141,6 +141,16 @@ public class CMCClient {
     @Deprecated
     public Socket getSocket() {
         return this.socket;
+    }
+
+    // PRIVATE
+
+    /**
+     * Similar to CMCByteReceivedEvent
+     * @param data byte
+     */
+    private void onByteReceived(int data) {
+
     }
 
     /**
