@@ -1,12 +1,18 @@
 package net.jandie1505.connectionmanager.server;
 
 import net.jandie1505.connectionmanager.enums.CloseEventReason;
+import net.jandie1505.connectionmanager.server.events.CMSClientByteReceivedEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientCloseEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientCreatedEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientEvent;
-import net.jandie1505.connectionmanager.server.events.CMSClientByteReceivedEvent;
+import net.jandie1505.connectionmanager.utilities.ByteSender;
+import net.jandie1505.connectionmanager.utilities.CMInputStream;
+import net.jandie1505.connectionmanager.utilities.CMOutputStream;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -16,11 +22,13 @@ import java.util.UUID;
 /**
  * Server-side client (CMS = ConnectionManager Server)
  */
-public class CMSClient {
+public class CMSClient implements ByteSender, Closeable {
     UUID id;
     private Socket socket;
     private List<CMSClientEventListener> listeners;
     private Thread managerThread;
+    private CMInputStream clientInputStream;
+    private CMOutputStream clientOutputStream;
 
     public CMSClient(Socket socket) {
         this.listeners = new ArrayList<>();
@@ -36,6 +44,9 @@ public class CMSClient {
     private void setup(Socket socket) {
         this.id = UUID.randomUUID();
         this.socket = socket;
+
+        clientInputStream = new CMInputStream();
+        clientOutputStream = new CMOutputStream(this);
 
         this.managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
@@ -116,8 +127,29 @@ public class CMSClient {
      * @param data byte
      * @throws IOException IOException
      */
+    @Override
     public void sendByte(int data) throws IOException {
         this.socket.getOutputStream().write(data);
+    }
+
+    /**
+     * Get the InputStream of the client.
+     * THIS IS NOT THE INPUT STREAM OF THE SOCKET! IT IS A COPY OF IT!
+     * USE THIS INPUT STREAM INSTEAD OF THE SOCKET INPUT STREAM TO AVOID ERRORS!
+     * @return InputStream
+     */
+    public InputStream getInputStream() {
+        return this.clientInputStream;
+    }
+
+    /**
+     * Get the OutputStream of the client.
+     * THIS IS NOT THE OUTPUT STREAM OF THE SOCKET! IT IS A COPY OF IT!
+     * USE THIS OUTPUT STREAM INSTEAD OF THE SOCKET OUTPUT STREAM TO AVOID ERRORS!
+     * @return OutputStream
+     */
+    public OutputStream getOutputStream() {
+        return this.clientOutputStream;
     }
 
     /**
@@ -169,7 +201,7 @@ public class CMSClient {
      * @param data byte
      */
     private void onByteReceived(int data) {
-
+        this.clientInputStream.send(data);
     }
 
     /**

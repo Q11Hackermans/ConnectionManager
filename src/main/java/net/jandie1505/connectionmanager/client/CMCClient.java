@@ -5,8 +5,14 @@ import net.jandie1505.connectionmanager.client.events.CMCCreatedEvent;
 import net.jandie1505.connectionmanager.client.events.CMCEvent;
 import net.jandie1505.connectionmanager.client.events.CMCByteReceivedEvent;
 import net.jandie1505.connectionmanager.enums.CloseEventReason;
+import net.jandie1505.connectionmanager.utilities.ByteSender;
+import net.jandie1505.connectionmanager.utilities.CMInputStream;
+import net.jandie1505.connectionmanager.utilities.CMOutputStream;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -16,10 +22,12 @@ import java.util.List;
 /**
  * Client-side client (CMC = ConnectionManager Client)
  */
-public class CMCClient {
+public class CMCClient implements ByteSender, Closeable {
     private Socket socket;
     private List<CMCEventListener> listeners;
     private Thread managerThread;
+    private CMInputStream clientInputStream;
+    private CMOutputStream clientOutputStream;
 
     /**
      * Create a client.
@@ -47,6 +55,9 @@ public class CMCClient {
 
     private void setup(String host, int port) throws IOException {
         this.socket = new Socket(host, port);
+
+        this.clientInputStream = new CMInputStream();
+        this.clientOutputStream = new CMOutputStream(this);
 
         managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
@@ -110,6 +121,26 @@ public class CMCClient {
     }
 
     /**
+     * Get the InputStream of the client.
+     * THIS IS NOT THE INPUT STREAM OF THE SOCKET! IT IS A COPY OF IT!
+     * USE THIS INPUT STREAM INSTEAD OF THE SOCKET INPUT STREAM TO AVOID ERRORS!
+     * @return InputStream
+     */
+    public InputStream getInputStream() {
+        return this.clientInputStream;
+    }
+
+    /**
+     * Get the OutputStream of the client.
+     * THIS IS NOT THE OUTPUT STREAM OF THE SOCKET! IT IS A COPY OF IT!
+     * USE THIS OUTPUT STREAM INSTEAD OF THE SOCKET OUTPUT STREAM TO AVOID ERRORS!
+     * @return OutputStream
+     */
+    public OutputStream getOutputStream() {
+        return this.clientOutputStream;
+    }
+
+    /**
      * Get the closed and connection state
      * @return
      */
@@ -150,7 +181,7 @@ public class CMCClient {
      * @param data byte
      */
     private void onByteReceived(int data) {
-
+        this.clientInputStream.send(data);
     }
 
     /**
