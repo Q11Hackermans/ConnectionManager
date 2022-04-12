@@ -5,9 +5,6 @@ import net.jandie1505.connectionmanager.server.events.CMSClientByteReceivedEvent
 import net.jandie1505.connectionmanager.server.events.CMSClientCloseEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientCreatedEvent;
 import net.jandie1505.connectionmanager.server.events.CMSClientEvent;
-import net.jandie1505.connectionmanager.utilities.ByteSender;
-import net.jandie1505.connectionmanager.utilities.CMInputStream;
-import net.jandie1505.connectionmanager.utilities.CMOutputStream;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -22,13 +19,13 @@ import java.util.UUID;
 /**
  * Server-side client (CMS = ConnectionManager Server)
  */
-public class CMSClient implements ByteSender, Closeable {
+public class CMSClient implements Closeable {
     UUID id;
     private Socket socket;
     private List<CMSClientEventListener> listeners;
     private Thread managerThread;
-    private CMInputStream clientInputStream;
-    private CMOutputStream clientOutputStream;
+    private CMSInputStream clientInputStream;
+    private CMSOutputStream clientOutputStream;
 
     public CMSClient(Socket socket) {
         this.listeners = new ArrayList<>();
@@ -45,8 +42,8 @@ public class CMSClient implements ByteSender, Closeable {
         this.id = UUID.randomUUID();
         this.socket = socket;
 
-        clientInputStream = new CMInputStream();
-        clientOutputStream = new CMOutputStream(this);
+        clientInputStream = new CMSInputStream(this);
+        clientOutputStream = new CMSOutputStream(this);
 
         this.managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
@@ -127,7 +124,6 @@ public class CMSClient implements ByteSender, Closeable {
      * @param data byte
      * @throws IOException IOException
      */
-    @Override
     public void sendByte(int data) throws IOException {
         this.socket.getOutputStream().write(data);
     }

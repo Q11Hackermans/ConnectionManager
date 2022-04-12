@@ -1,13 +1,10 @@
 package net.jandie1505.connectionmanager.client;
 
+import net.jandie1505.connectionmanager.client.events.CMCByteReceivedEvent;
 import net.jandie1505.connectionmanager.client.events.CMCClosedEvent;
 import net.jandie1505.connectionmanager.client.events.CMCCreatedEvent;
 import net.jandie1505.connectionmanager.client.events.CMCEvent;
-import net.jandie1505.connectionmanager.client.events.CMCByteReceivedEvent;
 import net.jandie1505.connectionmanager.enums.CloseEventReason;
-import net.jandie1505.connectionmanager.utilities.ByteSender;
-import net.jandie1505.connectionmanager.utilities.CMInputStream;
-import net.jandie1505.connectionmanager.utilities.CMOutputStream;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -22,12 +19,12 @@ import java.util.List;
 /**
  * Client-side client (CMC = ConnectionManager Client)
  */
-public class CMCClient implements ByteSender, Closeable {
+public class CMCClient implements Closeable {
     private Socket socket;
     private List<CMCEventListener> listeners;
     private Thread managerThread;
-    private CMInputStream clientInputStream;
-    private CMOutputStream clientOutputStream;
+    private CMCInputStream clientInputStream;
+    private CMCOutputStream clientOutputStream;
 
     /**
      * Create a client.
@@ -56,8 +53,8 @@ public class CMCClient implements ByteSender, Closeable {
     private void setup(String host, int port) throws IOException {
         this.socket = new Socket(host, port);
 
-        this.clientInputStream = new CMInputStream();
-        this.clientOutputStream = new CMOutputStream(this);
+        this.clientInputStream = new CMCInputStream(this);
+        this.clientOutputStream = new CMCOutputStream(this);
 
         managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
@@ -67,6 +64,7 @@ public class CMCClient implements ByteSender, Closeable {
                         socket.close();
                         fireEvent(new CMCClosedEvent(this, CloseEventReason.DISCONNECTED_BY_REMOTE));
                     } else {
+                        onByteReceived(input);
                         fireEvent(new CMCByteReceivedEvent(this, input));
                     }
                 } catch (IOException e) {

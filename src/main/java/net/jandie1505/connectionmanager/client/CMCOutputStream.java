@@ -1,12 +1,12 @@
-package net.jandie1505.connectionmanager.utilities;
+package net.jandie1505.connectionmanager.client;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class CMOutputStream extends OutputStream {
-    ByteSender client;
+public class CMCOutputStream extends OutputStream {
+    CMCClient client;
 
-    public CMOutputStream(ByteSender client) {
+    public CMCOutputStream(CMCClient client) {
         this.client = client;
     }
 
