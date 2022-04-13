@@ -1,6 +1,6 @@
-package net.jandie1505.connectionmanager;
+package net.jandie1505.connectionmanager.streams;
 
-import net.jandie1505.connectionmanager.server.CMSClient;
+import net.jandie1505.connectionmanager.CMClient;
 
 import java.io.IOException;
 import java.io.OutputStream;

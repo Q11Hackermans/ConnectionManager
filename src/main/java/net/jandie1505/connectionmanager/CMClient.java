@@ -5,6 +5,8 @@ import net.jandie1505.connectionmanager.events.CMClientByteReceivedEvent;
 import net.jandie1505.connectionmanager.events.CMClientClosedEvent;
 import net.jandie1505.connectionmanager.events.CMClientCreatedEvent;
 import net.jandie1505.connectionmanager.events.CMClientEvent;
+import net.jandie1505.connectionmanager.streams.CMInputStream;
+import net.jandie1505.connectionmanager.streams.CMOutputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
