@@ -101,7 +101,9 @@ public abstract class CMClient {
      */
     public void close() {
         this.close1();
-        this.fireEvent(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
+        if(!this.isClosed()) {
+            this.fireEvent(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
+        }
     }
 
     /**
@@ -115,7 +117,9 @@ public abstract class CMClient {
      */
     public void close(ClientClosedReason reason) {
         this.close1();
-        this.fireEvent(new CMClientClosedEvent(this, reason));
+        if(!this.isClosed()) {
+            this.fireEvent(new CMClientClosedEvent(this, reason));
+        }
     }
 
     private void close1() {
@@ -194,7 +198,7 @@ public abstract class CMClient {
 
     // BYTE RECEIVING AND SENDING
     public void sendByte(int data) throws IOException {
-        if(data > 0 && data < 256) {
+        if(data >= 0 && data <= 255) {
             this.socket.getOutputStream().write(data);
         } else {
             throw new IllegalArgumentException("A byte can only be in range of 0-255");
