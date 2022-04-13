@@ -25,16 +25,27 @@ public abstract class CMClient {
     // SETUP
     public CMClient(Socket socket) {
         this.listeners = new ArrayList<>();
-        this.setup1(socket);
+        this.setup1(socket, null);
     }
 
     public CMClient(Socket socket, Collection<CMClientEventListener> listeners) {
         this.listeners = new ArrayList<>();
         this.listeners.addAll(listeners);
-        this.setup1(socket);
+        this.setup1(socket, null);
     }
 
-    private void setup1(Socket socket) {
+    public CMClient(Socket socket, Object... constructorParameters) {
+        this.listeners = new ArrayList<>();
+        this.setup1(socket, constructorParameters);
+    }
+
+    public CMClient(Socket socket, Collection<CMClientEventListener> listeners, Object... constructorParameters) {
+        this.listeners = new ArrayList<>();
+        this.listeners.addAll(listeners);
+        this.setup1(socket, constructorParameters);
+    }
+
+    private void setup1(Socket socket, Object[] constructorParameters) {
         this.socket = socket;
 
         this.inputStream = new CMInputStream(this);
@@ -60,15 +71,22 @@ public abstract class CMClient {
         });
         managerThread.start();
 
-        this.setup();
+        this.setup(constructorParameters);
 
-        this.fireEvent(new CMClientCreatedEvent(this));
+        new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            this.fireEvent(new CMClientCreatedEvent(this));
+        }).start();
     }
 
     /**
      * For setup of subclasses
      */
-    protected void setup() {}
+    protected void setup(Object[] constructorParameters) {}
 
     // EVENT LISTENER
     /**
@@ -100,10 +118,10 @@ public abstract class CMClient {
      * Close the connection, the Input/Output streams and shutdown the threads
      */
     public void close() {
-        this.close1();
         if(!this.isClosed()) {
             this.fireEvent(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
         }
+        this.close1();
     }
 
     /**
@@ -116,10 +134,10 @@ public abstract class CMClient {
      *
      */
     public void close(ClientClosedReason reason) {
-        this.close1();
         if(!this.isClosed()) {
             this.fireEvent(new CMClientClosedEvent(this, reason));
         }
+        this.close1();
     }
 
     private void close1() {
@@ -211,10 +229,8 @@ public abstract class CMClient {
     }
 
     protected void fireEvent(CMClientEvent event) {
-        new Thread(() -> {
-            for(CMClientEventListener listener : this.listeners) {
-                listener.onEvent(event);
-            }
-        }).start();
+        for(CMClientEventListener listener : this.listeners) {
+            listener.onEvent(event);
+        }
     }
 }

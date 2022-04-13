@@ -14,13 +14,16 @@ public class CMSClient extends CMClient {
     private CMSServer server;
 
     public CMSClient(Socket socket, CMSServer server) {
-        super(socket);
-        this.server = server;
+        super(socket, server);
     }
 
     public CMSClient(Socket socket, CMSServer server, List<CMClientEventListener> listeners) {
-        super(socket, listeners);
-        this.server = server;
+        super(socket, listeners, server);
+    }
+
+    @Override
+    public void setup(Object[] constructorParameters) {
+        this.server = (CMSServer) constructorParameters[0];
     }
 
     /**
