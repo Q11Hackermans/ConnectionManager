@@ -24,7 +24,7 @@ public class CMSServer {
     // CLIENT SPECIFIC THINGS
     private List<CMClientEventListener> globalClientListeners;
 
-    // CODE
+    // SETUP
     public CMSServer(int port) throws IOException {
         this.server = new ServerSocket(port);
         this.clients = new HashMap<>();
@@ -32,26 +32,6 @@ public class CMSServer {
         this.listeners = new ArrayList<>();
 
         this.globalClientListeners = new ArrayList<>();
-    }
-
-    /**
-     * Starts listening for connection attempts and accepting them
-     */
-    public void startListen() {
-        if(this.thread != null && this.thread.isAlive()) {
-            this.thread.stop();
-        }
-
-        this.thread = new Thread(() -> {
-            while(!Thread.currentThread().isInterrupted()) {
-                try {
-                    clients.put(this.getRandomUniqueId(), new CMSClient(server.accept(), this, globalClientListeners));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        this.thread.start();
 
         // This will remove all clients which are disconnected
         Thread garbageCollection = new Thread(new Runnable() {
@@ -69,10 +49,45 @@ public class CMSServer {
         });
         garbageCollection.setDaemon(true);
         garbageCollection.start();
+    }
+
+    // LISTENER THREAD
+    /**
+     * Starts listening for connection attempts and accepting them
+     */
+    public void startListen() {
+        if(this.thread != null && this.thread.isAlive()) {
+            this.thread.stop();
+        }
+
+        this.thread = new Thread(() -> {
+            while(!Thread.currentThread().isInterrupted()) {
+                try {
+                    clients.put(this.getRandomUniqueId(), new CMSClient(server.accept(), this, globalClientListeners));
+                } catch (IOException e) {
+                    Thread.currentThread().interrupt();
+                    this.fireEvent(new CMSServerStopListeningEvent(this));
+                    e.printStackTrace();
+                }
+            }
+        });
+        this.thread.start();
 
         fireEvent(new CMSServerStartListeningEvent(this));
     }
 
+    /**
+     * Stops listening for connection attempts and accepting them
+     */
+    public void stopListen() {
+        if(this.thread != null) {
+            this.thread.stop();
+        }
+        this.thread = null;
+        this.fireEvent(new CMSServerStopListeningEvent(this));
+    }
+
+    // CLIENT UUIDS
     private UUID getRandomUniqueId() {
         UUID uuid = UUID.randomUUID();
         boolean unique = true;
@@ -132,15 +147,7 @@ public class CMSServer {
         return this.clients.get(id);
     }
 
-    /**
-     * Stops listening for connection attempts and accepting them
-     */
-    public void stopListen() {
-        this.thread.stop();
-        this.thread = null;
-        this.fireEvent(new CMSServerStopListeningEvent(this));
-    }
-
+    // CLOSE
     /**
      * Close all clients. This will not close the server.
      * @throws IOException IOException
@@ -152,6 +159,7 @@ public class CMSServer {
         }
     }
 
+    // LISTENERS
     /**
      * Add a server listener
      * @param listener listener
@@ -176,6 +184,7 @@ public class CMSServer {
         return this.listeners;
     }
 
+    // GLOBAL LISTENERS
     /**
      * Add a global client listener
      * @param listener listener
@@ -200,6 +209,7 @@ public class CMSServer {
         return this.globalClientListeners;
     }
 
+    // EVENTS
     private void fireEvent(CMSServerEvent event) {
         for(CMSServerEventListener listener : this.listeners) {
             listener.onEvent(event);
