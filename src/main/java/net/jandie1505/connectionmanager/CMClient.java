@@ -18,7 +18,9 @@ import java.util.List;
 public abstract class CMClient {
     private Socket socket;
     private List<CMClientEventListener> listeners;
+    private List<CMClientEvent> eventQueue;
     private Thread managerThread;
+    private Thread eventQueueThread;
     private CMInputStream inputStream;
     private CMOutputStream outputStream;
 
@@ -51,6 +53,8 @@ public abstract class CMClient {
         this.inputStream = new CMInputStream(this);
         this.outputStream = new CMOutputStream(this);
 
+        this.eventQueue = new ArrayList<>();
+
         this.managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
@@ -70,6 +74,22 @@ public abstract class CMClient {
             }
         });
         managerThread.start();
+
+        this.eventQueueThread = new Thread(() -> {
+            while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
+                if(eventQueue != null && eventQueue.size() > 0) {
+                    for(CMClientEventListener listener : this.listeners) {
+                        try {
+                            listener.onEvent(eventQueue.remove(0));
+                        } catch(Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        });
+        eventQueueThread.setName(this + "-EventHandlerThread");
+        eventQueueThread.start();
 
         this.setup(constructorParameters);
 
@@ -150,6 +170,7 @@ public abstract class CMClient {
             }
         } catch (IOException e) {
             this.managerThread.interrupt();
+            this.eventQueueThread.interrupt();
             this.inputStream.close();
             System.out.println("Socket error occurred. The client threads were shutdown to avoid error spams. Read StackTrace for more information. Client object: " + this.socket);
             e.printStackTrace();
@@ -229,8 +250,6 @@ public abstract class CMClient {
     }
 
     protected void fireEvent(CMClientEvent event) {
-        for(CMClientEventListener listener : this.listeners) {
-            listener.onEvent(event);
-        }
+        eventQueue.add(event);
     }
 }
