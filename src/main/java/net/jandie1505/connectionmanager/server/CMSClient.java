@@ -11,14 +11,16 @@ import java.util.UUID;
  * Server-side client (CMS = ConnectionManager Server)
  */
 public class CMSClient extends CMClient {
-    UUID id;
+    private CMSServer server;
 
-    public CMSClient(Socket socket) {
+    public CMSClient(Socket socket, CMSServer server) {
         super(socket);
+        this.server = server;
     }
 
-    public CMSClient(Socket socket, List<CMClientEventListener> listeners) {
+    public CMSClient(Socket socket, CMSServer server, List<CMClientEventListener> listeners) {
         super(socket, listeners);
+        this.server = server;
     }
 
     /**
@@ -26,6 +28,14 @@ public class CMSClient extends CMClient {
      * @return Unique ID (UUID)
      */
     public UUID getUniqueId() {
-        return this.id;
+        return this.server.getIdOfClient(this);
+    }
+
+    /**
+     * Returns the server
+     * @return CMSServer
+     */
+    public CMSServer getServer() {
+        return this.server;
     }
 }

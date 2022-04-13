@@ -68,7 +68,7 @@ public abstract class CMClient {
     /**
      * For setup of subclasses
      */
-    public void setup() {}
+    protected void setup() {}
 
     // EVENT LISTENER
     /**
@@ -107,7 +107,7 @@ public abstract class CMClient {
     /**
      * For subclasses
      */
-    public void onClose() {}
+    protected void onClose() {}
 
     /**
      * Close the connection, the Input/Output streams and shutdown the threads (with a specific reason)

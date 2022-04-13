@@ -7,9 +7,7 @@ import net.jandie1505.connectionmanager.server.events.CMSServerStopListeningEven
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Server (CMS = ConnectionManager Server)
@@ -17,7 +15,7 @@ import java.util.UUID;
 public class CMSServer {
     // BASIC THINGS
     private ServerSocket server;
-    private List<CMSClient> clients;
+    private Map<UUID, CMSClient> clients;
     Thread thread;
 
     // SERVER SPECIFIC THINGS
@@ -29,7 +27,7 @@ public class CMSServer {
     // CODE
     public CMSServer(int port) throws IOException {
         this.server = new ServerSocket(port);
-        this.clients = new ArrayList<>();
+        this.clients = new HashMap<>();
 
         this.listeners = new ArrayList<>();
 
@@ -44,15 +42,12 @@ public class CMSServer {
             this.thread.stop();
         }
 
-        this.thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(!Thread.currentThread().isInterrupted()) {
-                    try {
-                        clients.add(new CMSClient(server.accept(), globalClientListeners));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+        this.thread = new Thread(() -> {
+            while(!Thread.currentThread().isInterrupted()) {
+                try {
+                    clients.put(this.getRandomUniqueId(), new CMSClient(server.accept(), this, globalClientListeners));
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         });
@@ -63,8 +58,12 @@ public class CMSServer {
             @Override
             public void run() {
                 while(!Thread.currentThread().isInterrupted()) {
-                    clients.remove(null);
-                    clients.removeIf(CMSClient::isClosed);
+                    for(UUID uuid : clients.keySet()) {
+                        CMSClient client = clients.get(uuid);
+                        if(client == null || client.isClosed()) {
+                            clients.remove(uuid);
+                        }
+                    }
                 }
             }
         });
@@ -74,12 +73,54 @@ public class CMSServer {
         fireEvent(new CMSServerStartListeningEvent(this));
     }
 
+    private UUID getRandomUniqueId() {
+        UUID uuid = UUID.randomUUID();
+        boolean unique = true;
+        for(UUID compare : this.clients.keySet()) {
+            if(uuid.equals(compare)) {
+                unique = false;
+            }
+        }
+        if(unique) {
+            return uuid;
+        } else {
+            return this.getRandomUniqueId();
+        }
+    }
+
+    /**
+     * Returns a map of the clients and their UUIDs
+     * @return Map
+     */
+    public Map<UUID, CMSClient> getClients() {
+        return this.clients;
+    }
+
+    /**
+     * Get UUID of Client
+     * @param client CMSClient
+     * @return UUID
+     */
+    protected UUID getIdOfClient(CMSClient client) {
+        for(UUID uuid : this.clients.keySet()) {
+            CMSClient c = this.clients.get(uuid);
+            if(client == c) {
+                return uuid;
+            }
+        }
+        return null;
+    }
+
     /**
      * Returns a list of all clients
      * @return List<CMSClient>
      */
-    public List<CMSClient> getClients() {
-        return this.clients;
+    public List<CMSClient> getClientList() {
+        List<CMSClient> returnList = new ArrayList<>();
+        for(UUID uuid : this.clients.keySet()) {
+            returnList.add(this.clients.get(uuid));
+        }
+        return returnList;
     }
 
     /**
@@ -88,12 +129,7 @@ public class CMSServer {
      * @return CMSClient
      */
     public CMSClient getClientById(UUID id) {
-        for(CMSClient client : clients) {
-            if(client.getUniqueId().equals(id)) {
-                return client;
-            }
-        }
-        return null;
+        return this.clients.get(id);
     }
 
     /**
@@ -106,11 +142,12 @@ public class CMSServer {
     }
 
     /**
-     * Close all clients
+     * Close all clients. This will not close the server.
      * @throws IOException IOException
      */
     public void closeAll() throws IOException {
-        for(CMSClient client : this.clients) {
+        for(UUID uuid : this.clients.keySet()) {
+            CMSClient client = this.clients.get(uuid);
             client.close();
         }
     }
