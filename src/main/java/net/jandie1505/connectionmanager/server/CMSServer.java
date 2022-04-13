@@ -37,7 +37,7 @@ public class CMSServer {
         Thread garbageCollection = new Thread(new Runnable() {
             @Override
             public void run() {
-                while(!Thread.currentThread().isInterrupted()) {
+                while(!Thread.currentThread().isInterrupted() && !server.isClosed()) {
                     for(UUID uuid : clients.keySet()) {
                         CMSClient client = clients.get(uuid);
                         if(client == null || client.isClosed()) {
@@ -61,7 +61,7 @@ public class CMSServer {
         }
 
         this.thread = new Thread(() -> {
-            while(!Thread.currentThread().isInterrupted()) {
+            while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
                 try {
                     clients.put(this.getRandomUniqueId(), new CMSClient(server.accept(), this, globalClientListeners));
                 } catch (IOException e) {
@@ -150,13 +150,36 @@ public class CMSServer {
     // CLOSE
     /**
      * Close all clients. This will not close the server.
-     * @throws IOException IOException
      */
-    public void closeAll() throws IOException {
+    public void closeAll() {
         for(UUID uuid : this.clients.keySet()) {
             CMSClient client = this.clients.get(uuid);
             client.close();
         }
+    }
+
+    /**
+     * Close the server and all its clients.
+     */
+    public void close() {
+        try {
+            this.server.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        if(this.thread != null) {
+            this.thread.stop();
+        }
+        this.closeAll();
+        this.clients.clear();
+    }
+
+    /**
+     * Returns whether the server is closed or not.
+     * @return boolean
+     */
+    public boolean isClosed() {
+        return this.server.isClosed();
     }
 
     // LISTENERS
