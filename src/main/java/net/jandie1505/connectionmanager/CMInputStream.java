@@ -1,36 +1,42 @@
-package net.jandie1505.connectionmanager.server;
+package net.jandie1505.connectionmanager;
+
+import net.jandie1505.connectionmanager.server.CMSClient;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-public class CMSInputStream extends InputStream {
-    CMSClient owner;
-    List<Integer> queue;
-    CountDownLatch latch;
-    int b;
+public class CMInputStream extends InputStream {
+    private CMClient owner;
+    private List<Integer> queue;
+    private CountDownLatch latch;
+    private Thread thread;
 
-    public CMSInputStream(CMSClient client) {
+    public CMInputStream(CMClient client) {
         this.owner = client;
         this.queue = new ArrayList<>();
-        b = -2;
 
-        new Thread(() -> {
+        this.thread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.owner.isClosed()) {
                 if(this.latch != null && this.latch.getCount() != 0 && this.queue.size() > 0) {
                     this.latch.countDown();
                 }
             }
-        }).start();
+        });
+        this.thread.start();
     }
 
     @Override
     public int read() {
         try {
             this.latch = new CountDownLatch(1);
-            this.latch.await();
-            return this.queue.remove(0);
+            if(!this.thread.isInterrupted()) {
+                this.latch.await();
+                return this.queue.remove(0);
+            } else {
+                return -1;
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -41,5 +47,10 @@ public class CMSInputStream extends InputStream {
         if(b >= 0 && this.latch != null) {
             this.queue.add(b);
         }
+    }
+
+    @Override
+    public void close() {
+        this.thread.interrupt();
     }
 }

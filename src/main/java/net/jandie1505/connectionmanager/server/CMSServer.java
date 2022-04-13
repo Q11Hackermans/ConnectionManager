@@ -1,5 +1,6 @@
 package net.jandie1505.connectionmanager.server;
 
+import net.jandie1505.connectionmanager.CMClientEventListener;
 import net.jandie1505.connectionmanager.server.events.CMSServerEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerStartListeningEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerStopListeningEvent;
@@ -23,7 +24,7 @@ public class CMSServer {
     private List<CMSServerEventListener> listeners;
 
     // CLIENT SPECIFIC THINGS
-    private List<CMSClientEventListener> globalClientListeners;
+    private List<CMClientEventListener> globalClientListeners;
 
     // CODE
     public CMSServer(int port) throws IOException {
@@ -142,7 +143,7 @@ public class CMSServer {
      * Add a global client listener
      * @param listener listener
      */
-    public void addGlobalListener(CMSClientEventListener listener) {
+    public void addGlobalListener(CMClientEventListener listener) {
         this.globalClientListeners.add(listener);
     }
 
@@ -150,7 +151,7 @@ public class CMSServer {
      * Remove a global client listener
      * @param listener listener
      */
-    public void removeGlobalListener(CMSClientEventListener listener) {
+    public void removeGlobalListener(CMClientEventListener listener) {
         this.globalClientListeners.remove(listener);
     }
 
@@ -158,7 +159,7 @@ public class CMSServer {
      * Get a list of global client listeners
      * @return list of listeners
      */
-    public List<CMSClientEventListener> listGlobalListeners() {
+    public List<CMClientEventListener> listGlobalListeners() {
         return this.globalClientListeners;
     }
 
