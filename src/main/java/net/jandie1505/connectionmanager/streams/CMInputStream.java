@@ -1,6 +1,7 @@
 package net.jandie1505.connectionmanager.streams;
 
 import net.jandie1505.connectionmanager.CMClient;
+import net.jandie1505.connectionmanager.interfaces.ThreadStopCondition;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -8,12 +9,12 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class CMInputStream extends InputStream {
-    private CMClient owner;
+    private ThreadStopCondition owner;
     private List<Integer> queue;
     private CountDownLatch latch;
     private Thread thread;
 
-    public CMInputStream(CMClient client) {
+    public CMInputStream(ThreadStopCondition client) {
         this.owner = client;
         this.queue = new ArrayList<>();
 

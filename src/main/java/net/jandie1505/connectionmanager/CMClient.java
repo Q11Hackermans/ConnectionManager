@@ -5,9 +5,12 @@ import net.jandie1505.connectionmanager.events.CMClientByteReceivedEvent;
 import net.jandie1505.connectionmanager.events.CMClientClosedEvent;
 import net.jandie1505.connectionmanager.events.CMClientCreatedEvent;
 import net.jandie1505.connectionmanager.events.CMClientEvent;
+import net.jandie1505.connectionmanager.interfaces.ByteSender;
+import net.jandie1505.connectionmanager.interfaces.ThreadStopCondition;
 import net.jandie1505.connectionmanager.streams.CMInputStream;
 import net.jandie1505.connectionmanager.streams.CMOutputStream;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class CMClient {
+public abstract class CMClient implements ThreadStopCondition, ByteSender, Closeable {
     private Socket socket;
     private List<CMClientEventListener> listeners;
     private List<CMClientEvent> eventQueue;
@@ -25,6 +28,7 @@ public abstract class CMClient {
     private Thread eventQueueThread;
     private CMInputStream inputStream;
     private CMOutputStream outputStream;
+    private CMMultiStreamHandler multiStreamHandler;
 
     // SETUP
     public CMClient(Socket socket) {
@@ -204,6 +208,23 @@ public abstract class CMClient {
         return this.outputStream;
     }
 
+    // MULTI STREAM MANAGER
+    /**
+     * Enable the MultiStreamHandler.
+     * The MultiStreamHandler allows to get as many InputStreams and OutputStreams as you want.
+     */
+    public void enableMultiStreamHandler() {
+        this.multiStreamHandler = new CMMultiStreamHandler(this);
+    }
+
+    /**
+     * Get the MultiStreamHandler. When the MultiStreamHandler is disabled, this will return null.
+     * @return MutliStreamHandler or null if it is disabled
+     */
+    public CMMultiStreamHandler getMultiStreamHandler() {
+        return this.multiStreamHandler;
+    }
+
     // GET SOCKET INFORMATION
     /**
      * Get the IP Address
@@ -238,19 +259,28 @@ public abstract class CMClient {
     }
 
     // BYTE RECEIVING AND SENDING
-    public void sendByte(int data) throws IOException {
-        if(data >= 0 && data <= 255) {
-            this.socket.getOutputStream().write(data);
-        } else {
-            throw new IllegalArgumentException("A byte can only be in range of 0-255");
+    public void sendByte(int data) {
+        try {
+            if(data >= 0 && data <= 255) {
+                this.socket.getOutputStream().write(data);
+            } else {
+                throw new IllegalArgumentException("A byte can only be in range of 0-255");
+            }
+        } catch(IOException e) {
+            this.close(ClientClosedReason.NO_REASON);
+            e.printStackTrace();
         }
     }
 
     private void onByteReceived(int data) {
         this.inputStream.send(data);
+        if(this.multiStreamHandler != null) {
+            this.multiStreamHandler.send(data);
+        }
         this.fireEvent(new CMClientByteReceivedEvent(this, data));
     }
 
+    // EVENTS
     protected void fireEvent(CMClientEvent event) {
         eventQueue.add(event);
     }
