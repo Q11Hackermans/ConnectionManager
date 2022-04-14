@@ -1,6 +1,5 @@
 package net.jandie1505.connectionmanager.streams;
 
-import net.jandie1505.connectionmanager.CMClient;
 import net.jandie1505.connectionmanager.interfaces.ThreadStopCondition;
 
 import java.io.InputStream;
