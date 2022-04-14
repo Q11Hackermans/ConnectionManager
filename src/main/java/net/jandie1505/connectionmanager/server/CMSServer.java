@@ -203,7 +203,7 @@ public class CMSServer {
      * Get a list of all server listeners
      * @return list of listeners
      */
-    public List<CMSServerEventListener> listListeners() {
+    public List<CMSServerEventListener> getListeners() {
         return this.listeners;
     }
 
@@ -228,7 +228,7 @@ public class CMSServer {
      * Get a list of global client listeners
      * @return list of listeners
      */
-    public List<CMClientEventListener> listGlobalListeners() {
+    public List<CMClientEventListener> getGlobalListeners() {
         return this.globalClientListeners;
     }
 
