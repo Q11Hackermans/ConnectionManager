@@ -1,6 +1,7 @@
 package net.jandie1505.connectionmanager.server;
 
 import net.jandie1505.connectionmanager.CMClientEventListener;
+import net.jandie1505.connectionmanager.server.events.CMSServerConnectionAcceptedEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerStartListeningEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerStopListeningEvent;
@@ -63,7 +64,9 @@ public class CMSServer {
         this.thread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
                 try {
-                    clients.put(this.getRandomUniqueId(), new CMSClient(server.accept(), this, globalClientListeners));
+                    CMSClient client = new CMSClient(server.accept(), this, globalClientListeners);
+                    clients.put(this.getRandomUniqueId(), client);
+                    this.fireEvent(new CMSServerConnectionAcceptedEvent(this, client));
                 } catch (IOException e) {
                     Thread.currentThread().interrupt();
                     this.fireEvent(new CMSServerStopListeningEvent(this));
