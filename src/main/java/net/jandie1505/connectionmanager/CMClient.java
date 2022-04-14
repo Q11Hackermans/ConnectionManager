@@ -86,11 +86,12 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
                 if(eventQueue != null && eventQueue.size() > 0) {
                     for(CMClientEventListener listener : this.listeners) {
                         try {
-                            listener.onEvent(eventQueue.remove(0));
+                            listener.onEvent(eventQueue.get(0));
                         } catch(Exception e) {
                             e.printStackTrace();
                         }
                     }
+                    eventQueue.remove(0);
                 }
             }
         });
