@@ -214,7 +214,9 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
      * The MultiStreamHandler allows to get as many InputStreams and OutputStreams as you want.
      */
     public void enableMultiStreamHandler() {
-        this.multiStreamHandler = new CMMultiStreamHandler(this);
+        if(this.multiStreamHandler == null) {
+            this.multiStreamHandler = new CMMultiStreamHandler(this);
+        }
     }
 
     /**
