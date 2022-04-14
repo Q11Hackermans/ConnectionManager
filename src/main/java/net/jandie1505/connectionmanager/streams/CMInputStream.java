@@ -22,6 +22,12 @@ public class CMInputStream extends InputStream {
             while(!Thread.currentThread().isInterrupted() && !this.owner.isClosed()) {
                 if(this.latch != null && this.latch.getCount() != 0 && this.queue.size() > 0) {
                     this.latch.countDown();
+                    try {
+                        Thread.sleep(1);
+                        this.queue.remove(0);
+                    } catch (InterruptedException ignored) {
+                        //
+                    }
                 }
             }
         });
@@ -31,9 +37,12 @@ public class CMInputStream extends InputStream {
     @Override
     public int read() {
         try {
-            this.latch = new CountDownLatch(1);
+            if(this.latch == null) {
+                this.latch = new CountDownLatch(1);
+            }
             if(!this.thread.isInterrupted()) {
                 this.latch.await();
+                this.latch = null;
                 return this.queue.remove(0);
             } else {
                 return -1;
