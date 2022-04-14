@@ -9,8 +9,10 @@ import net.jandie1505.connectionmanager.server.events.CMSServerConnectionAccepte
 import net.jandie1505.connectionmanager.server.events.CMSServerEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerStartListeningEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerStopListeningEvent;
+import net.jandie1505.connectionmanager.utilities.dataiostreamhandler.DataIOEventListener;
+import net.jandie1505.connectionmanager.utilities.dataiostreamhandler.events.*;
 
-public abstract class CMListenerAdapter implements CMClientEventListener, CMSServerEventListener {
+public abstract class CMListenerAdapter implements CMClientEventListener, CMSServerEventListener, DataIOEventListener {
 
     // CLIENT
 
@@ -31,6 +33,26 @@ public abstract class CMListenerAdapter implements CMClientEventListener, CMSSer
     public void onServerConnectionAccept(CMSServerConnectionAcceptedEvent event) {}
 
     public void onUnknownServerEvent(CMSServerEvent event) {}
+
+    // DATA IO
+
+    public void onByteReceived(DataIOByteReceivedEvent event) {}
+
+    public void onBooleanReceived(DataIOBooleanReceivedEvent event) {}
+
+    public void onShortReceived(DataIOShortReceivedEvent event) {}
+
+    public void onCharReceived(DataIOCharReceivedEvent event) {}
+
+    public void onIntReceived(DataIOIntReceivedEvent event) {}
+
+    public void onLongReceivedEvent(DataIOLongReceivedEvent event) {}
+
+    public void onFloatReceived(DataIOFloatReceivedEvent event) {}
+
+    public void onDoubleReceived(DataIODoubleReceivedEvent event) {}
+
+    public void onUTFReceived(DataIOUTFReceivedEvent event) {}
 
     // EVENT LISTENERS
 
@@ -57,6 +79,29 @@ public abstract class CMListenerAdapter implements CMClientEventListener, CMSSer
             onServerConnectionAccept((CMSServerConnectionAcceptedEvent) event);
         } else {
             onUnknownServerEvent(event);
+        }
+    }
+
+    @Override
+    public void onEvent(DataIOEvent event) {
+        if(event instanceof DataIOByteReceivedEvent) {
+            onByteReceived((DataIOByteReceivedEvent) event);
+        } else if(event instanceof DataIOBooleanReceivedEvent) {
+            onBooleanReceived((DataIOBooleanReceivedEvent) event);
+        } else if(event instanceof DataIOShortReceivedEvent) {
+            onShortReceived((DataIOShortReceivedEvent) event);
+        } else if(event instanceof DataIOCharReceivedEvent) {
+            onCharReceived((DataIOCharReceivedEvent) event);
+        } else if(event instanceof DataIOIntReceivedEvent) {
+            onIntReceived((DataIOIntReceivedEvent) event);
+        } else if(event instanceof DataIOLongReceivedEvent) {
+            onLongReceivedEvent((DataIOLongReceivedEvent) event);
+        } else if(event instanceof DataIOFloatReceivedEvent) {
+            onFloatReceived((DataIOFloatReceivedEvent) event);
+        } else if(event instanceof DataIODoubleReceivedEvent) {
+            onDoubleReceived((DataIODoubleReceivedEvent) event);
+        } else if(event instanceof DataIOUTFReceivedEvent) {
+            onUTFReceived((DataIOUTFReceivedEvent) event);
         }
     }
 }
