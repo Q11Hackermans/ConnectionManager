@@ -2,7 +2,7 @@ package net.jandie1505.connectionmanager.server.events;
 
 import net.jandie1505.connectionmanager.server.CMSServer;
 
-public class CMSServerEvent {
+public abstract class CMSServerEvent {
     private CMSServer server;
 
     public CMSServerEvent(CMSServer server) {
