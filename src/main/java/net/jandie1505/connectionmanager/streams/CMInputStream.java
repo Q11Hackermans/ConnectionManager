@@ -24,12 +24,13 @@ public class CMInputStream extends InputStream {
                     try {
                         Thread.sleep(1);
                         this.queue.remove(0);
-                    } catch (InterruptedException ignored) {
+                    } catch (IndexOutOfBoundsException | InterruptedException ignored) {
                         //
                     }
                 }
             }
         });
+        this.thread.setName(this + "-Thread");
         this.thread.start();
     }
 

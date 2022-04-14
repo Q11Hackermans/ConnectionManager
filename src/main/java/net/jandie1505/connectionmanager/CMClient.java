@@ -79,7 +79,8 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
                 }
             }
         });
-        managerThread.start();
+        this.managerThread.setName(this + "-ManagerThread");
+        this.managerThread.start();
 
         this.eventQueueThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {

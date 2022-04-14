@@ -48,6 +48,7 @@ public class CMSServer {
                 }
             }
         });
+        garbageCollection.setName(this + "-GarbageCollectionThread");
         garbageCollection.setDaemon(true);
         garbageCollection.start();
     }
@@ -74,6 +75,7 @@ public class CMSServer {
                 }
             }
         });
+        this.thread.setName(this + "-ConnectionThread");
         this.thread.start();
 
         fireEvent(new CMSServerStartListeningEvent(this));

@@ -24,6 +24,7 @@ public class CMMultiStreamHandler implements ThreadStopCondition, ByteSender {
         this.byteQueue = new ArrayList<>();
 
         new Thread(() -> {
+            Thread.currentThread().setName(this + "-Thread");
             while(!Thread.currentThread().isInterrupted() && !this.isClosed()) {
                 if(byteQueue != null && byteQueue.size() > 0) {
                     for(CMInputStream inputStream : inputStreams) {
