@@ -180,4 +180,8 @@ public class DataIOStreamHandler {
         this.inputStream = null;
         this.outputStream = null;
     }
+
+    public boolean isClosed() {
+        return this.client.isClosed();
+    }
 }
