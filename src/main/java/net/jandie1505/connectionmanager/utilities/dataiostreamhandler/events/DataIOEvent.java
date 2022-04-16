@@ -11,4 +11,12 @@ public abstract class DataIOEvent {
         this.dataIOStreamHandler = dataIOStreamHandler;
         this.client = client;
     }
+
+    public DataIOStreamHandler getHandler() {
+        return this.dataIOStreamHandler;
+    }
+
+    public CMClient getClient() {
+        return this.client;
+    }
 }
