@@ -149,6 +149,16 @@ public class DataIOStreamHandler {
         eventQueue.add(event);
     }
 
+    // CLIENT
+
+    /**
+     * Returns the client
+     * @return CMClient
+     */
+    public CMClient getClient() {
+        return this.client;
+    }
+
     // CLOSE
 
     /**
