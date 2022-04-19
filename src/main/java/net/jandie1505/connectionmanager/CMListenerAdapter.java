@@ -5,9 +5,7 @@ import net.jandie1505.connectionmanager.events.CMClientClosedEvent;
 import net.jandie1505.connectionmanager.events.CMClientCreatedEvent;
 import net.jandie1505.connectionmanager.events.CMClientEvent;
 import net.jandie1505.connectionmanager.server.CMSServerEventListener;
-import net.jandie1505.connectionmanager.server.events.CMSServerConnectionAcceptedEvent;
-import net.jandie1505.connectionmanager.server.events.CMSServerEvent;
-import net.jandie1505.connectionmanager.server.events.CMSServerStartedEvent;
+import net.jandie1505.connectionmanager.server.events.*;
 import net.jandie1505.connectionmanager.utilities.dataiostreamhandler.DataIOEventListener;
 import net.jandie1505.connectionmanager.utilities.dataiostreamhandler.events.*;
 
@@ -27,7 +25,11 @@ public abstract class CMListenerAdapter implements CMClientEventListener, CMSSer
 
     public void onServerStarted(CMSServerStartedEvent event) {}
 
+    public void onServerConnectionAttempt(CMSServerConnectionAttemptEvent event) {}
+
     public void onServerConnectionAccept(CMSServerConnectionAcceptedEvent event) {}
+
+    public void onServerConnectionRefused(CMSServerConnectionRefusedEvent event) {}
 
     public void onUnknownServerEvent(CMSServerEvent event) {}
 
@@ -70,8 +72,12 @@ public abstract class CMListenerAdapter implements CMClientEventListener, CMSSer
     public void onEvent(CMSServerEvent event) {
         if(event instanceof CMSServerStartedEvent) {
             onServerStarted((CMSServerStartedEvent) event);
+        } else if(event instanceof CMSServerConnectionAttemptEvent) {
+            onServerConnectionAttempt((CMSServerConnectionAttemptEvent) event);
         } else if(event instanceof CMSServerConnectionAcceptedEvent) {
             onServerConnectionAccept((CMSServerConnectionAcceptedEvent) event);
+        } else if(event instanceof CMSServerConnectionRefusedEvent) {
+            onServerConnectionRefused((CMSServerConnectionRefusedEvent) event);
         } else {
             onUnknownServerEvent(event);
         }
