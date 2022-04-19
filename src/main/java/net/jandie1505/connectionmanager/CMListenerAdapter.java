@@ -7,8 +7,7 @@ import net.jandie1505.connectionmanager.events.CMClientEvent;
 import net.jandie1505.connectionmanager.server.CMSServerEventListener;
 import net.jandie1505.connectionmanager.server.events.CMSServerConnectionAcceptedEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerEvent;
-import net.jandie1505.connectionmanager.server.events.CMSServerStartListeningEvent;
-import net.jandie1505.connectionmanager.server.events.CMSServerStopListeningEvent;
+import net.jandie1505.connectionmanager.server.events.CMSServerStartedEvent;
 import net.jandie1505.connectionmanager.utilities.dataiostreamhandler.DataIOEventListener;
 import net.jandie1505.connectionmanager.utilities.dataiostreamhandler.events.*;
 
@@ -26,9 +25,7 @@ public abstract class CMListenerAdapter implements CMClientEventListener, CMSSer
 
     // SERVER
 
-    public void onServerStartListening(CMSServerStartListeningEvent event) {}
-
-    public void onServerStopListening(CMSServerStopListeningEvent event) {}
+    public void onServerStarted(CMSServerStartedEvent event) {}
 
     public void onServerConnectionAccept(CMSServerConnectionAcceptedEvent event) {}
 
@@ -71,10 +68,8 @@ public abstract class CMListenerAdapter implements CMClientEventListener, CMSSer
 
     @Override
     public void onEvent(CMSServerEvent event) {
-        if(event instanceof CMSServerStartListeningEvent) {
-            onServerStartListening((CMSServerStartListeningEvent) event);
-        } else if(event instanceof CMSServerStopListeningEvent) {
-            onServerStopListening((CMSServerStopListeningEvent) event);
+        if(event instanceof CMSServerStartedEvent) {
+            onServerStarted((CMSServerStartedEvent) event);
         } else if(event instanceof CMSServerConnectionAcceptedEvent) {
             onServerConnectionAccept((CMSServerConnectionAcceptedEvent) event);
         } else {

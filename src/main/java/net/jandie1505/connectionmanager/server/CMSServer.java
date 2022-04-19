@@ -3,8 +3,7 @@ package net.jandie1505.connectionmanager.server;
 import net.jandie1505.connectionmanager.CMClientEventListener;
 import net.jandie1505.connectionmanager.server.events.CMSServerConnectionAcceptedEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerEvent;
-import net.jandie1505.connectionmanager.server.events.CMSServerStartListeningEvent;
-import net.jandie1505.connectionmanager.server.events.CMSServerStopListeningEvent;
+import net.jandie1505.connectionmanager.server.events.CMSServerStartedEvent;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -51,16 +50,6 @@ public class CMSServer {
         garbageCollection.setName(this + "-GarbageCollectionThread");
         garbageCollection.setDaemon(true);
         garbageCollection.start();
-    }
-
-    // LISTENER THREAD
-    /**
-     * Starts listening for connection attempts and accepting them
-     */
-    public void startListen() {
-        if(this.thread != null && this.thread.isAlive()) {
-            this.thread.stop();
-        }
 
         this.thread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
@@ -70,7 +59,6 @@ public class CMSServer {
                     this.fireEvent(new CMSServerConnectionAcceptedEvent(this, client));
                 } catch (IOException e) {
                     Thread.currentThread().interrupt();
-                    this.fireEvent(new CMSServerStopListeningEvent(this));
                     e.printStackTrace();
                 }
             }
@@ -78,18 +66,7 @@ public class CMSServer {
         this.thread.setName(this + "-ConnectionThread");
         this.thread.start();
 
-        fireEvent(new CMSServerStartListeningEvent(this));
-    }
-
-    /**
-     * Stops listening for connection attempts and accepting them
-     */
-    public void stopListen() {
-        if(this.thread != null) {
-            this.thread.stop();
-        }
-        this.thread = null;
-        this.fireEvent(new CMSServerStopListeningEvent(this));
+        this.fireEvent(new CMSServerStartedEvent(this));
     }
 
     // CLIENT UUIDS
