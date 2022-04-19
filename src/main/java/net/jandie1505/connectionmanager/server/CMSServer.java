@@ -2,12 +2,12 @@ package net.jandie1505.connectionmanager.server;
 
 import net.jandie1505.connectionmanager.CMClientEventListener;
 import net.jandie1505.connectionmanager.enums.ConnectionBehavior;
-import net.jandie1505.connectionmanager.server.events.CMSServerConnectionAcceptedEvent;
-import net.jandie1505.connectionmanager.server.events.CMSServerEvent;
-import net.jandie1505.connectionmanager.server.events.CMSServerStartedEvent;
+import net.jandie1505.connectionmanager.enums.PendingClientState;
+import net.jandie1505.connectionmanager.server.events.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.*;
 
 /**
@@ -18,7 +18,7 @@ public class CMSServer {
     private final ServerSocket server;
     private final Map<UUID, CMSClient> clients;
     private final Thread thread;
-    private final Map<UUID, CMSClient> pendingConnections;
+    private final Map<UUID, CMSPendingClient> pendingConnections;
     private ConnectionBehavior defaultConnectionBehavior;
     private long connectionReactionTime;
 
@@ -34,7 +34,7 @@ public class CMSServer {
         this.clients = new HashMap<>();
         this.defaultConnectionBehavior = ConnectionBehavior.REFUSE;
         this.pendingConnections = new HashMap<>();
-        this.connectionReactionTime = 10;
+        this.connectionReactionTime = 1000;
 
         this.listeners = new ArrayList<>();
 
@@ -58,12 +58,48 @@ public class CMSServer {
         garbageCollection.setDaemon(true);
         garbageCollection.start();
 
+        Thread pendingClientsThread = new Thread(() -> {
+            while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
+                for(UUID uuid : pendingConnections.keySet()) {
+                    CMSPendingClient client = pendingConnections.get(uuid);
+                    new Thread(() -> {
+                        try {
+                            if(client.getTime() > 0) {
+                                client.setTime(client.getTime() - 1);
+                                Thread.sleep(1);
+                                checkPendingClient(uuid);
+                            } else {
+                                if(defaultConnectionBehavior == ConnectionBehavior.ACCEPT) {
+                                    client.setState(PendingClientState.ACCEPTED);
+                                } else {
+                                    client.setState(PendingClientState.DENIED);
+                                }
+                                checkPendingClient(uuid);
+                            }
+                        } catch(InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
+                }
+            }
+            if(this.server.isClosed()) {
+                for(UUID uuid : pendingConnections.keySet()) {
+                    CMSPendingClient client = pendingConnections.get(uuid);
+                    client.setState(PendingClientState.DENIED);
+                    checkPendingClient(uuid);
+                }
+            }
+        });
+        pendingClientsThread.setName(this + "-PendingClientsThread");
+        pendingClientsThread.start();
+
         this.thread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
                 try {
-                    CMSClient client = new CMSClient(server.accept(), this, globalClientListeners);
-                    clients.put(this.getRandomUniqueId(), client);
-                    this.fireEvent(new CMSServerConnectionAcceptedEvent(this, client));
+                    UUID uuid = getRandomUniqueId();
+                    CMSPendingClient client = new CMSPendingClient(server.accept(), connectionReactionTime);
+                    pendingConnections.put(uuid, client);
+                    this.fireEvent(new CMSServerConnectionAttemptEvent(this, uuid, client));
                 } catch (IOException e) {
                     Thread.currentThread().interrupt();
                     e.printStackTrace();
@@ -76,7 +112,28 @@ public class CMSServer {
         this.fireEvent(new CMSServerStartedEvent(this));
     }
 
-    // CONNECTION ACCEPTING
+    private void checkPendingClient(UUID uniqueId) {
+        CMSPendingClient pendingClient = this.pendingConnections.get(uniqueId);
+        switch(pendingClient.getState()) {
+            case ACCEPTED:
+                CMSClient client = new CMSClient(pendingClient.getSocket(),this, globalClientListeners);
+                clients.put(uniqueId, client);
+                this.pendingConnections.remove(uniqueId);
+                this.fireEvent(new CMSServerConnectionAcceptedEvent(this, client));
+                break;
+            case DENIED:
+                this.pendingConnections.remove(uniqueId);
+                try {
+                    pendingClient.getSocket().close();
+                } catch(IOException ignored) {
+                    // IGNORED
+                }
+                this.fireEvent(new CMSServerConnectionRefusedEvent(this, uniqueId, pendingClient));
+                break;
+        }
+    }
+
+    // CONNECTIONS
 
     /**
      * Returns the current default connection behavior
@@ -95,40 +152,10 @@ public class CMSServer {
     }
 
     /**
-     * Allow a connection (if the default connection behavior is REFUSE)
-     * @param uuid UUID of the pending connection
-     */
-    public void allowConnection(UUID uuid) {
-
-    }
-
-    /**
-     * Deny a connection (if the default connection behavior is ALLOW)
-     * @param uuid UUID of the pending connection
-     */
-    public void denyConnection(UUID uuid) {
-
-    }
-
-    /**
-     * Accept all pending connections
-     */
-    public void acceptAllConnections() {
-
-    }
-
-    /**
-     * Deny all pending connections
-     */
-    public void denyAllConnections() {
-
-    }
-
-    /**
      * Get all pending connections
      * @return Map of UUIDs and pending connections
      */
-    public Map<UUID, CMSClient> getPendingConnections() {
+    public Map<UUID, CMSPendingClient> getPendingConnections() {
         return Map.copyOf(this.pendingConnections);
     }
 
@@ -278,7 +305,7 @@ public class CMSServer {
     }
 
     // EVENTS
-    private void fireEvent(CMSServerEvent event) {
+    protected void fireEvent(CMSServerEvent event) {
         for(CMSServerEventListener listener : this.listeners) {
             listener.onEvent(event);
         }
