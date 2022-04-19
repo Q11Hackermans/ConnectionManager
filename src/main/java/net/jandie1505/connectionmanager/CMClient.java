@@ -84,15 +84,17 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
 
         this.eventQueueThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
-                if(eventQueue != null && eventQueue.size() > 0) {
-                    for(CMClientEventListener listener : this.listeners) {
-                        try {
-                            listener.onEvent(eventQueue.get(0));
-                        } catch(Exception e) {
-                            e.printStackTrace();
+                synchronized(this.eventQueue) {
+                    if(eventQueue != null && eventQueue.size() > 0) {
+                        for(CMClientEventListener listener : this.listeners) {
+                            try {
+                                listener.onEvent(eventQueue.get(0));
+                            } catch(Exception e) {
+                                e.printStackTrace();
+                            }
                         }
+                        eventQueue.remove(0);
                     }
-                    eventQueue.remove(0);
                 }
             }
         });
@@ -286,6 +288,8 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
 
     // EVENTS
     protected void fireEvent(CMClientEvent event) {
-        eventQueue.add(event);
+        synchronized(this.eventQueue) {
+            eventQueue.add(event);
+        }
     }
 }

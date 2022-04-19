@@ -18,7 +18,9 @@ public class CMSServer {
     private final ServerSocket server;
     private final Map<UUID, CMSClient> clients;
     private final Thread thread;
+    private final Thread eventQueueThread;
     private final Map<UUID, CMSPendingClient> pendingConnections;
+    private final List<CMSServerEvent> eventQueue;
     private ConnectionBehavior defaultConnectionBehavior;
     private long connectionReactionTime;
 
@@ -35,6 +37,7 @@ public class CMSServer {
         this.defaultConnectionBehavior = ConnectionBehavior.REFUSE;
         this.pendingConnections = new HashMap<>();
         this.connectionReactionTime = 1000;
+        this.eventQueue = new ArrayList<>();
 
         this.listeners = new ArrayList<>();
 
@@ -57,6 +60,25 @@ public class CMSServer {
         garbageCollection.setName(this + "-GarbageCollectionThread");
         garbageCollection.setDaemon(true);
         garbageCollection.start();
+
+        this.eventQueueThread = new Thread(() -> {
+            while(!Thread.currentThread().isInterrupted() && !server.isClosed()) {
+                synchronized(this.eventQueue) {
+                    if(eventQueue != null && eventQueue.size() > 0) {
+                        for(CMSServerEventListener listener : this.listeners) {
+                            try {
+                                listener.onEvent(eventQueue.get(0));
+                            } catch(Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        eventQueue.remove(0);
+                    }
+                }
+            }
+        });
+        eventQueueThread.setName(this + "-EventHandlerThread");
+        eventQueueThread.start();
 
         Thread pendingClientsThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
@@ -326,8 +348,8 @@ public class CMSServer {
 
     // EVENTS
     protected void fireEvent(CMSServerEvent event) {
-        for(CMSServerEventListener listener : this.listeners) {
-            listener.onEvent(event);
+        synchronized(this.eventQueue) {
+            eventQueue.add(event);
         }
     }
 }
