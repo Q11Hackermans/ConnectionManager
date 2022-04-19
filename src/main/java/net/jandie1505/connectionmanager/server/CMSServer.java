@@ -133,7 +133,7 @@ public class CMSServer {
         }
     }
 
-    // CONNECTIONS
+    // CONNECTION ATTEMPTS
 
     /**
      * Returns the current default connection behavior
@@ -157,6 +157,26 @@ public class CMSServer {
      */
     public Map<UUID, CMSPendingClient> getPendingConnections() {
         return Map.copyOf(this.pendingConnections);
+    }
+
+    /**
+     * Get the time the user has time to accept/deny a pending connection.
+     * After that time, the default connection behavior will be used for that.
+     * @return time
+     */
+    public long getConnectionReactionTime() {
+        return this.connectionReactionTime;
+    }
+
+    /**
+     * Set the time the user has time to accept/deny a pending connection.
+     * After that time, the default connection behavior will be used for that.
+     * @param connectionReactionTime time (1-512000)
+     */
+    public void setConnectionReactionTime(long connectionReactionTime) {
+        if(connectionReactionTime >= 1 && connectionReactionTime <= 512000) {
+            this.connectionReactionTime = connectionReactionTime;
+        }
     }
 
     // CLIENT UUIDS
