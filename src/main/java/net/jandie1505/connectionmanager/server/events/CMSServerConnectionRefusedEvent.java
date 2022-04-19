@@ -11,6 +11,8 @@ public class CMSServerConnectionRefusedEvent extends CMSServerEvent {
 
     public CMSServerConnectionRefusedEvent(CMSServer server, UUID uuid, CMSPendingClient client) {
         super(server);
+        this.uuid = uuid;
+        this.client = client;
     }
 
     public UUID getUuid() {

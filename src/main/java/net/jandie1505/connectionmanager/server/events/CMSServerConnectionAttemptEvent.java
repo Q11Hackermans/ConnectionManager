@@ -11,6 +11,8 @@ public class CMSServerConnectionAttemptEvent extends CMSServerEvent {
 
     public CMSServerConnectionAttemptEvent(CMSServer server, UUID uuid, CMSPendingClient client) {
         super(server);
+        this.uuid = uuid;
+        this.client = client;
     }
 
     public UUID getUuid() {

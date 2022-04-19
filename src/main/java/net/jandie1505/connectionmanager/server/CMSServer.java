@@ -117,8 +117,8 @@ public class CMSServer {
         this.thread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
                 try {
-                    UUID uuid = getRandomUniqueId();
                     CMSPendingClient client = new CMSPendingClient(server.accept(), connectionReactionTime);
+                    UUID uuid = getRandomUniqueId();
                     pendingConnections.put(uuid, client);
                     this.fireEvent(new CMSServerConnectionAttemptEvent(this, uuid, client));
                 } catch (IOException e) {
