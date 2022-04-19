@@ -2,7 +2,7 @@ package net.jandie1505.connectionmanager.streams;
 
 import net.jandie1505.connectionmanager.interfaces.ThreadStopCondition;
 
-import java.io.*;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

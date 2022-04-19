@@ -7,7 +7,6 @@ import net.jandie1505.connectionmanager.server.events.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.*;
 
 /**
