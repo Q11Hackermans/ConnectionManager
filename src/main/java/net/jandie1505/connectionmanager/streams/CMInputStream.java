@@ -2,37 +2,42 @@ package net.jandie1505.connectionmanager.streams;
 
 import net.jandie1505.connectionmanager.interfaces.ThreadStopCondition;
 
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class CMInputStream extends InputStream {
-    private ThreadStopCondition owner;
-    private List<Integer> queue;
+    private final ThreadStopCondition owner;
+    private final List<Integer> queue;
+    private final Thread thread;
     private CountDownLatch latch;
-    private Thread thread;
     private int value;
     private long time;
 
     public CMInputStream(ThreadStopCondition client) {
         this.latch = new CountDownLatch(1);
         this.owner = client;
-        this.queue = new ArrayList<>();
+        this.queue = Collections.synchronizedList(new ArrayList<>());
         this.value = -2;
         this.time = 10;
 
         this.thread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.owner.isClosed()) {
-                if(this.latch != null && this.latch.getCount() != 0 && this.queue.size() > 0) {
-                    this.value = this.queue.remove(0);
-                    this.latch.countDown();
-                    this.latch = new CountDownLatch(1);
-                    try {
-                        Thread.sleep(this.time);
-                    } catch (InterruptedException ignored) {
-                        //
+                synchronized(this.queue) {
+                    if(this.latch != null && this.latch.getCount() != 0 && this.queue.size() > 0) {
+                        this.value = this.queue.remove(0);
+                        this.latch.countDown();
+                        this.latch = new CountDownLatch(1);
+                    } else {
+                        this.value = -2;
                     }
+                }
+                try {
+                    Thread.sleep(this.time);
+                } catch(InterruptedException ignored) {
+                    // IGNORED
                 }
             }
             this.value = -1;
@@ -60,6 +65,9 @@ public class CMInputStream extends InputStream {
     public int read() {
         try {
             if(!this.thread.isInterrupted() && !this.owner.isClosed()) {
+                while(this.latch.getCount() == 0) {
+                    Thread.sleep(1);
+                }
                 this.latch.await();
                 return value;
             } else {
@@ -79,7 +87,9 @@ public class CMInputStream extends InputStream {
     @Deprecated
     public void send(int b) {
         if(b >= 0 && this.latch != null) {
-            this.queue.add(b);
+            synchronized(this.queue) {
+                this.queue.add(b);
+            }
         }
     }
 
