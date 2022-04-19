@@ -1,6 +1,7 @@
 package net.jandie1505.connectionmanager.server;
 
 import net.jandie1505.connectionmanager.CMClientEventListener;
+import net.jandie1505.connectionmanager.enums.ConnectionBehavior;
 import net.jandie1505.connectionmanager.server.events.CMSServerConnectionAcceptedEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerEvent;
 import net.jandie1505.connectionmanager.server.events.CMSServerStartedEvent;
@@ -14,20 +15,26 @@ import java.util.*;
  */
 public class CMSServer {
     // BASIC THINGS
-    private ServerSocket server;
-    private Map<UUID, CMSClient> clients;
-    Thread thread;
+    private final ServerSocket server;
+    private final Map<UUID, CMSClient> clients;
+    private final Thread thread;
+    private final Map<UUID, CMSClient> pendingConnections;
+    private ConnectionBehavior defaultConnectionBehavior;
+    private long connectionReactionTime;
 
     // SERVER SPECIFIC THINGS
-    private List<CMSServerEventListener> listeners;
+    private final List<CMSServerEventListener> listeners;
 
     // CLIENT SPECIFIC THINGS
-    private List<CMClientEventListener> globalClientListeners;
+    private final List<CMClientEventListener> globalClientListeners;
 
     // SETUP
     public CMSServer(int port) throws IOException {
         this.server = new ServerSocket(port);
         this.clients = new HashMap<>();
+        this.defaultConnectionBehavior = ConnectionBehavior.REFUSE;
+        this.pendingConnections = new HashMap<>();
+        this.connectionReactionTime = 10;
 
         this.listeners = new ArrayList<>();
 
@@ -67,6 +74,62 @@ public class CMSServer {
         this.thread.start();
 
         this.fireEvent(new CMSServerStartedEvent(this));
+    }
+
+    // CONNECTION ACCEPTING
+
+    /**
+     * Returns the current default connection behavior
+     * @return ConnectionBehavior
+     */
+    public ConnectionBehavior getDefaultConnectionBehavior() {
+        return this.defaultConnectionBehavior;
+    }
+
+    /**
+     * Set the default connection behavior
+     * @param behavior ConnectionBehavior
+     */
+    public void setDefaultConnectionBehavior(ConnectionBehavior behavior) {
+        this.defaultConnectionBehavior = behavior;
+    }
+
+    /**
+     * Allow a connection (if the default connection behavior is REFUSE)
+     * @param uuid UUID of the pending connection
+     */
+    public void allowConnection(UUID uuid) {
+
+    }
+
+    /**
+     * Deny a connection (if the default connection behavior is ALLOW)
+     * @param uuid UUID of the pending connection
+     */
+    public void denyConnection(UUID uuid) {
+
+    }
+
+    /**
+     * Accept all pending connections
+     */
+    public void acceptAllConnections() {
+
+    }
+
+    /**
+     * Deny all pending connections
+     */
+    public void denyAllConnections() {
+
+    }
+
+    /**
+     * Get all pending connections
+     * @return Map of UUIDs and pending connections
+     */
+    public Map<UUID, CMSClient> getPendingConnections() {
+        return Map.copyOf(this.pendingConnections);
     }
 
     // CLIENT UUIDS
