@@ -209,6 +209,11 @@ public class CMSServer {
                 unique = false;
             }
         }
+        for(UUID compare : this.pendingConnections.keySet()) {
+            if(uuid.equals(compare)) {
+                unique = false;
+            }
+        }
         if(unique) {
             return uuid;
         } else {
