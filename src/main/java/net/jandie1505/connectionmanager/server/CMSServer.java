@@ -83,24 +83,22 @@ public class CMSServer {
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
                 for(UUID uuid : pendingConnections.keySet()) {
                     CMSPendingClient client = pendingConnections.get(uuid);
-                    new Thread(() -> {
-                        try {
-                            if(client.getTime() > 0) {
-                                client.setTime(client.getTime() - 1);
-                                Thread.sleep(1);
-                                checkPendingClient(uuid);
+                    try {
+                        if(client.getTime() > 0) {
+                            client.setTime(client.getTime() - 1);
+                            Thread.sleep(1);
+                            checkPendingClient(uuid);
+                        } else {
+                            if(defaultConnectionBehavior == ConnectionBehavior.ACCEPT) {
+                                client.setState(PendingClientState.ACCEPTED);
                             } else {
-                                if(defaultConnectionBehavior == ConnectionBehavior.ACCEPT) {
-                                    client.setState(PendingClientState.ACCEPTED);
-                                } else {
-                                    client.setState(PendingClientState.DENIED);
-                                }
-                                checkPendingClient(uuid);
+                                client.setState(PendingClientState.DENIED);
                             }
-                        } catch(InterruptedException e) {
-                            e.printStackTrace();
+                            checkPendingClient(uuid);
                         }
-                    }).start();
+                    } catch(InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
             if(this.server.isClosed()) {
