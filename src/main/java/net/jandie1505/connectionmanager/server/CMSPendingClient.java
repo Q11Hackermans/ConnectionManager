@@ -32,6 +32,8 @@ public class CMSPendingClient {
     }
 
     public void setTime(long time) {
-        this.time = time;
+        if(time >= 0 && time <= 512000) {
+            this.time = time;
+        }
     }
 }
