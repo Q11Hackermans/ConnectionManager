@@ -62,6 +62,7 @@ public class DataIOStreamHandler {
                     }
                 } catch(IOException e) {
                     Thread.currentThread().interrupt();
+                    close();
                     e.printStackTrace();
                 }
             }
