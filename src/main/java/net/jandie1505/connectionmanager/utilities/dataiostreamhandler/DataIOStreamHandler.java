@@ -193,6 +193,6 @@ public class DataIOStreamHandler {
     }
 
     public boolean isClosed() {
-        return this.client.isClosed();
+        return !this.opened;
     }
 }
