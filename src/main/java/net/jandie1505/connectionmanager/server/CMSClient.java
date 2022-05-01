@@ -26,6 +26,11 @@ public class CMSClient extends CMClient {
         this.server = (CMSServer) constructorParameters[0];
     }
 
+    @Override
+    public boolean stopcondition() {
+        return (this.server == null || this.server.isClosed());
+    }
+
     /**
      * Get the unique ID of the client
      * @return Unique ID (UUID)
