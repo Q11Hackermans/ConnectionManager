@@ -12,11 +12,11 @@ import java.util.UUID;
 
 public class DataIOManager {
     private CMSServer server;
-    private List<DataIOStreamHandler> handlers;
-    private List<DataIOEventListener> listeners;
+    private final List<DataIOStreamHandler> handlers;
+    private final List<DataIOEventListener> listeners;
     private CMClientEventListener clientEventlistener;
-    private DataIOType type;
-    private boolean useMultiStreamHandler;
+    private final DataIOType type;
+    private final boolean useMultiStreamHandler;
     private boolean opened;
 
     public DataIOManager(CMSServer server, DataIOType type, boolean useMultiStreamHandler) {
@@ -74,6 +74,18 @@ public class DataIOManager {
      */
     public List<DataIOStreamHandler> getHandlers() {
         return List.copyOf(this.handlers);
+    }
+
+    public void addEventListener(DataIOEventListener listener) {
+        this.listeners.add(listener);
+    }
+
+    public void removeEventListener(int index) {
+        this.listeners.remove(index);
+    }
+
+    public List<DataIOEventListener> getEventListeners() {
+        return List.copyOf(this.listeners);
     }
 
     public void close() {
