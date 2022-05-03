@@ -65,7 +65,7 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
                     try {
-                        if(!stopcondition()) {
+                        if(stopcondition()) {
                             this.close();
                         }
                     } catch(Exception ignored) {}
