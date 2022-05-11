@@ -64,6 +64,12 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
         this.managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
+                    try {
+                        if(stopcondition()) {
+                            this.close();
+                        }
+                    } catch(Exception ignored) {}
+
                     if(!socket.isConnected()) {
                         this.close(ClientClosedReason.CONNECTION_FAILED);
                     }
@@ -113,10 +119,19 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
         }).start();
     }
 
+    // FOR SUBCLASSES
     /**
      * For setup of subclasses
      */
     protected void setup(Object[] constructorParameters) {}
+
+    /**
+     * For custom stop conditions of subclasses
+     * @return true = stop
+     */
+    protected boolean stopcondition() {
+        return false;
+    }
 
     // EVENT LISTENER
     /**
