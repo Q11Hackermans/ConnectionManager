@@ -22,12 +22,12 @@ public class CMSClient extends CMClient {
     }
 
     @Override
-    public void setup(Object[] constructorParameters) {
+    protected void setup(Object[] constructorParameters) {
         this.server = (CMSServer) constructorParameters[0];
     }
 
     @Override
-    public boolean stopcondition() {
+    protected boolean stopcondition() {
         return (this.server == null || this.server.isClosed());
     }
 
