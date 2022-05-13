@@ -90,42 +90,42 @@ public class DataIOStreamHandler {
 
     // SEND
 
-    public void writeBoolean(boolean v) throws IOException {
+    public synchronized void writeBoolean(boolean v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeBoolean(v);
     }
 
-    public void writeShort(short v) throws IOException {
+    public synchronized void writeShort(short v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeShort(v);
     }
 
-    public void writeChar(char v) throws IOException {
+    public synchronized void writeChar(char v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeChar(v);
     }
 
-    public void writeInt(int v) throws IOException {
+    public synchronized void writeInt(int v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeInt(v);
     }
 
-    public void writeLong(long v) throws IOException {
+    public synchronized void writeLong(long v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeLong(v);
     }
 
-    public void writeFloat(float v) throws IOException {
+    public synchronized void writeFloat(float v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeFloat(v);
     }
 
-    public void writeDouble(double v) throws IOException {
+    public synchronized void writeDouble(double v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeDouble(v);
     }
 
-    public void writeUTF(String str) throws IOException {
+    public synchronized void writeUTF(String str) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeUTF(str);
     }
