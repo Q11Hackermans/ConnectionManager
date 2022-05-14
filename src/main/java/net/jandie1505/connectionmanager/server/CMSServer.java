@@ -244,7 +244,7 @@ public class CMSServer {
 
     /**
      * Returns a list of all clients
-     * @return List<CMSClient>
+     * @return List of CMSClients
      */
     public List<CMSClient> getClientList() {
         List<CMSClient> returnList = new ArrayList<>();
