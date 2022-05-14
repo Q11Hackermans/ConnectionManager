@@ -61,6 +61,8 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
 
         this.eventQueue = new ArrayList<>();
 
+        this.setup(constructorParameters);
+
         this.managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
@@ -106,8 +108,6 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
         });
         eventQueueThread.setName(this + "-EventHandlerThread");
         eventQueueThread.start();
-
-        this.setup(constructorParameters);
 
         new Thread(() -> {
             try {
