@@ -56,7 +56,7 @@ public class DataIOManager {
     /**
      * This will return the DataIOHandler with a specifc UUID.
      * Returns null if the Client is not a CMSClient or if no handler with the specified UUID is found.
-     * @param uuid
+     * @param uuid UUID
      * @return DataIOStreamHandler (when found) or null (when not found or CMClient is not a CMSClient)
      */
     public DataIOStreamHandler getHandlerByClientUUID(UUID uuid) {

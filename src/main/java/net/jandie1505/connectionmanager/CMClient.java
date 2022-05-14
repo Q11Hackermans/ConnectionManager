@@ -122,6 +122,7 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
     // FOR SUBCLASSES
     /**
      * For setup of subclasses
+     * @param constructorParameters Parameters from the constructor
      */
     protected void setup(Object[] constructorParameters) {}
 
@@ -176,7 +177,7 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
 
     /**
      * Close the connection, the Input/Output streams and shutdown the threads (with a specific reason)
-     *
+     * @param reason Reason why the client was closed
      */
     public void close(ClientClosedReason reason) {
         if(!this.isClosed()) {
