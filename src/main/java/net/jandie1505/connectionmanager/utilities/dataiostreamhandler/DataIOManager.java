@@ -31,8 +31,12 @@ public class DataIOManager {
 
     private void setup() {
         this.clientEventlistener = event -> {
-            if(this.opened) {
-                handlers.add(new DataIOStreamHandler(event.getClient(), type, useMultiStreamHandler));
+            if(this.opened && event instanceof CMClientCreatedEvent) {
+                DataIOStreamHandler handler = new DataIOStreamHandler(event.getClient(), type, useMultiStreamHandler);
+                for(DataIOEventListener listener : this.listeners) {
+                    handler.addEventListener(listener);
+                }
+                handlers.add(handler);
             }
         };
 
@@ -51,10 +55,12 @@ public class DataIOManager {
         garbageCollector.setName("DATAIO-MANAGER-GARBAGECOLLECTOR " +  this);
         garbageCollector.setDaemon(true);
         garbageCollector.start();
+
+        this.server.addGlobalListener(this.clientEventlistener);
     }
 
     /**
-     * This will return the DataIOHandler with a specifc UUID.
+     * This will return the DataIOStreamHandler with a specifc UUID.
      * Returns null if the Client is not a CMSClient or if no handler with the specified UUID is found.
      * @param uuid UUID
      * @return DataIOStreamHandler (when found) or null (when not found or CMClient is not a CMSClient)
