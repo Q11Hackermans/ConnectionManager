@@ -1,7 +1,8 @@
 package net.jandie1505.connectionmanager;
 
+import net.jandie1505.connectionmanager.events.CMClientEvent;
 import net.jandie1505.connectionmanager.interfaces.ByteSender;
-import net.jandie1505.connectionmanager.interfaces.ThreadStopCondition;
+import net.jandie1505.connectionmanager.interfaces.StreamOwner;
 import net.jandie1505.connectionmanager.streams.CMInputStream;
 import net.jandie1505.connectionmanager.streams.CMOutputStream;
 
@@ -10,7 +11,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CMMultiStreamHandler implements ThreadStopCondition, ByteSender {
+public class CMMultiStreamHandler implements StreamOwner, ByteSender {
     private CMClient owner;
     private List<CMInputStream> inputStreams;
     private List<CMOutputStream> outputStreams;
@@ -108,5 +109,15 @@ public class CMMultiStreamHandler implements ThreadStopCondition, ByteSender {
     @Override
     public boolean isClosed() {
         return this.owner.isClosed();
+    }
+
+    @Override
+    public void fireEvent(CMClientEvent event) {
+        this.owner.fireEvent(event);
+    }
+
+    @Override
+    public CMClient getEventClient() {
+        return this.owner;
     }
 }

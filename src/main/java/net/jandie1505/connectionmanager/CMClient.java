@@ -6,7 +6,7 @@ import net.jandie1505.connectionmanager.events.CMClientClosedEvent;
 import net.jandie1505.connectionmanager.events.CMClientCreatedEvent;
 import net.jandie1505.connectionmanager.events.CMClientEvent;
 import net.jandie1505.connectionmanager.interfaces.ByteSender;
-import net.jandie1505.connectionmanager.interfaces.ThreadStopCondition;
+import net.jandie1505.connectionmanager.interfaces.StreamOwner;
 import net.jandie1505.connectionmanager.streams.CMInputStream;
 import net.jandie1505.connectionmanager.streams.CMOutputStream;
 
@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class CMClient implements ThreadStopCondition, ByteSender, Closeable {
+public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
     private Socket socket;
     private List<CMClientEventListener> listeners;
     private List<CMClientEvent> eventQueue;
@@ -303,9 +303,14 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
     }
 
     // EVENTS
-    protected void fireEvent(CMClientEvent event) {
+    public void fireEvent(CMClientEvent event) {
         synchronized(this.eventQueue) {
             eventQueue.add(event);
         }
+    }
+
+    @Override
+    public CMClient getEventClient() {
+        return this;
     }
 }

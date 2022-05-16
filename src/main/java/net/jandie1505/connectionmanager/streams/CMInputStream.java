@@ -1,6 +1,7 @@
 package net.jandie1505.connectionmanager.streams;
 
-import net.jandie1505.connectionmanager.interfaces.ThreadStopCondition;
+import net.jandie1505.connectionmanager.events.CMClientInputStreamByteLimitReachedEvent;
+import net.jandie1505.connectionmanager.interfaces.StreamOwner;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -9,27 +10,34 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class CMInputStream extends InputStream {
-    private final ThreadStopCondition owner;
+    private final StreamOwner owner;
     private final List<Integer> queue;
     private final Thread thread;
     private CountDownLatch latch;
     private int value;
     private long time;
+    private int streamByteLimit;
 
-    public CMInputStream(ThreadStopCondition client) {
+    public CMInputStream(StreamOwner client) {
         this.latch = new CountDownLatch(1);
         this.owner = client;
         this.queue = Collections.synchronizedList(new ArrayList<>());
         this.value = -2;
         this.time = 10;
+        this.streamByteLimit = 2500000;
 
         this.thread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.owner.isClosed()) {
                 synchronized(this.queue) {
                     if(this.latch != null && this.latch.getCount() != 0 && this.queue.size() > 0) {
-                        this.value = this.queue.remove(0);
-                        this.latch.countDown();
-                        this.latch = new CountDownLatch(1);
+                        if(!(this.queue.size() > this.streamByteLimit)) {
+                            this.value = this.queue.remove(0);
+                            this.latch.countDown();
+                            this.latch = new CountDownLatch(1);
+                        } else {
+                            this.queue.clear();
+                            this.owner.fireEvent(new CMClientInputStreamByteLimitReachedEvent(this.owner.getEventClient(), this));
+                        }
                     } else {
                         this.value = -2;
                     }
@@ -96,5 +104,17 @@ public class CMInputStream extends InputStream {
     @Override
     public void close() {
         this.thread.interrupt();
+    }
+
+    public int getStreamByteLimit() {
+        return streamByteLimit;
+    }
+
+    public void setStreamByteLimit(int streamByteLimit) {
+        if(this.streamByteLimit > 0) {
+            this.streamByteLimit = streamByteLimit;
+        } else {
+            throw new IllegalArgumentException("The stream discard amount must be positive");
+        }
     }
 }
