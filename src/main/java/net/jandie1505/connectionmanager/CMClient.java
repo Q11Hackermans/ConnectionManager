@@ -7,7 +7,7 @@ import net.jandie1505.connectionmanager.events.CMClientCreatedEvent;
 import net.jandie1505.connectionmanager.events.CMClientEvent;
 import net.jandie1505.connectionmanager.interfaces.ByteSender;
 import net.jandie1505.connectionmanager.interfaces.StreamOwner;
-import net.jandie1505.connectionmanager.streams.CMInputStream;
+import net.jandie1505.connectionmanager.streams.CMTimedInputStream;
 import net.jandie1505.connectionmanager.streams.CMOutputStream;
 
 import java.io.Closeable;
@@ -26,7 +26,7 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
     private List<CMClientEvent> eventQueue;
     private Thread managerThread;
     private Thread eventQueueThread;
-    private CMInputStream inputStream;
+    private CMTimedInputStream inputStream;
     private CMOutputStream outputStream;
     private CMMultiStreamHandler multiStreamHandler;
 
@@ -56,7 +56,7 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
     private void setup1(Socket socket, Object[] constructorParameters) {
         this.socket = socket;
 
-        this.inputStream = new CMInputStream(this);
+        this.inputStream = new CMTimedInputStream(this);
         this.outputStream = new CMOutputStream(this);
 
         this.eventQueue = new ArrayList<>();

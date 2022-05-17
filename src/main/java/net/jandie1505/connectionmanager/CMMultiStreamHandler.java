@@ -3,7 +3,7 @@ package net.jandie1505.connectionmanager;
 import net.jandie1505.connectionmanager.events.CMClientEvent;
 import net.jandie1505.connectionmanager.interfaces.ByteSender;
 import net.jandie1505.connectionmanager.interfaces.StreamOwner;
-import net.jandie1505.connectionmanager.streams.CMInputStream;
+import net.jandie1505.connectionmanager.streams.CMTimedInputStream;
 import net.jandie1505.connectionmanager.streams.CMOutputStream;
 
 import java.io.InputStream;
@@ -13,7 +13,7 @@ import java.util.List;
 
 public class CMMultiStreamHandler implements StreamOwner, ByteSender {
     private CMClient owner;
-    private List<CMInputStream> inputStreams;
+    private List<CMTimedInputStream> inputStreams;
     private List<CMOutputStream> outputStreams;
     private List<Integer> byteQueue;
 
@@ -28,7 +28,7 @@ public class CMMultiStreamHandler implements StreamOwner, ByteSender {
             Thread.currentThread().setName(this + "-Thread");
             while(!Thread.currentThread().isInterrupted() && !this.isClosed()) {
                 if(byteQueue != null && byteQueue.size() > 0) {
-                    for(CMInputStream inputStream : inputStreams) {
+                    for(CMTimedInputStream inputStream : inputStreams) {
                         inputStream.send(byteQueue.remove(0));
                     }
                 }
@@ -57,7 +57,7 @@ public class CMMultiStreamHandler implements StreamOwner, ByteSender {
      * @return The created InputStream
      */
     public InputStream addInputStream() {
-        CMInputStream inputStream = new CMInputStream(this);
+        CMTimedInputStream inputStream = new CMTimedInputStream(this);
         this.inputStreams.add(inputStream);
         return inputStream;
     }
@@ -74,7 +74,7 @@ public class CMMultiStreamHandler implements StreamOwner, ByteSender {
      * Get a list of all registered InputStreams
      * @return List of all InputStreams
      */
-    public List<CMInputStream> getInputStreams() {
+    public List<CMTimedInputStream> getInputStreams() {
         return List.copyOf(this.inputStreams);
     }
 

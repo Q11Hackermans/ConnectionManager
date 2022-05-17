@@ -1,7 +1,7 @@
 package net.jandie1505.connectionmanager.utilities.dataiostreamhandler;
 
 import net.jandie1505.connectionmanager.CMClient;
-import net.jandie1505.connectionmanager.streams.CMInputStream;
+import net.jandie1505.connectionmanager.streams.CMTimedInputStream;
 import net.jandie1505.connectionmanager.streams.CMOutputStream;
 import net.jandie1505.connectionmanager.utilities.dataiostreamhandler.events.*;
 
@@ -180,8 +180,8 @@ public class DataIOStreamHandler {
         }
         this.opened = false;
         if(this.client.getMultiStreamHandler() != null) {
-            if(this.client.getMultiStreamHandler().getInputStreams().contains((CMInputStream) this.inputStream)) {
-                this.client.getMultiStreamHandler().removeInputStream(this.client.getMultiStreamHandler().getInputStreams().indexOf((CMInputStream) this.inputStream));
+            if(this.client.getMultiStreamHandler().getInputStreams().contains((CMTimedInputStream) this.inputStream)) {
+                this.client.getMultiStreamHandler().removeInputStream(this.client.getMultiStreamHandler().getInputStreams().indexOf((CMTimedInputStream) this.inputStream));
             }
             if(this.client.getMultiStreamHandler().getOutputStreams().contains((CMOutputStream) this.outputStream)) {
                 this.client.getMultiStreamHandler().removeOutputStream(this.client.getMultiStreamHandler().getOutputStreams().indexOf((CMOutputStream) this.outputStream));
