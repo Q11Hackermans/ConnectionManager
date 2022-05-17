@@ -14,23 +14,30 @@ public class DataIOStreamHandler {
     private InputStream inputStream;
     private OutputStream outputStream;
     private boolean opened;
-    private List<DataIOEventListener> listeners;
-    private DataIOType listeningType;
+    private final List<DataIOEventListener> listeners;
+    private final DataIOType listeningType;
     private Thread thread;
     private Thread eventQueueThread;
-    private List<DataIOEvent> eventQueue;
+    private final List<DataIOEvent> eventQueue;
+    private final DataIOStreamType inputStreamType;
 
-    public DataIOStreamHandler(CMClient client, DataIOType type, boolean useMultiStreamHandler) {
+    public DataIOStreamHandler(CMClient client, DataIOType type, DataIOStreamType inputStreamType) {
         this.client = client;
         this.listeners = new ArrayList<>();
         this.listeningType = type;
         this.eventQueue = new ArrayList<>();
         this.opened = true;
-        if(useMultiStreamHandler) {
+        this.inputStreamType = inputStreamType;
+
+        if(inputStreamType == DataIOStreamType.MULTI_STREAM_HANDLER_TIMED || inputStreamType == DataIOStreamType.MULTI_STREAM_HANDLER_CONSUMING) {
             if(client.getMultiStreamHandler() == null) {
                 this.client.enableMultiStreamHandler();
             }
-            this.inputStream = this.client.getMultiStreamHandler().addInputStream();
+            if(inputStreamType == DataIOStreamType.MULTI_STREAM_HANDLER_CONSUMING) {
+                this.inputStream = this.client.getMultiStreamHandler().addConsumingInputStream();
+            } else {
+                this.inputStream = this.client.getMultiStreamHandler().addTimedInputStream();
+            }
             this.outputStream = this.client.getMultiStreamHandler().addOutputStream();
         } else {
             this.inputStream = client.getInputStream();

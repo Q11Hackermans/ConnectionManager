@@ -16,10 +16,10 @@ public class DataIOManager {
     private final List<DataIOEventListener> listeners;
     private CMClientEventListener clientEventlistener;
     private final DataIOType type;
-    private final boolean useMultiStreamHandler;
+    private final DataIOStreamType useMultiStreamHandler;
     private boolean opened;
 
-    public DataIOManager(CMSServer server, DataIOType type, boolean useMultiStreamHandler) {
+    public DataIOManager(CMSServer server, DataIOType type, DataIOStreamType useMultiStreamHandler) {
         this.server = server;
         this.handlers = new ArrayList<>();
         this.listeners = new ArrayList<>();

@@ -214,7 +214,7 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
      * USE THIS INPUT STREAM INSTEAD OF THE SOCKET INPUT STREAM TO AVOID ERRORS!
      * @return InputStream
      */
-    public InputStream getInputStream() {
+    public CMTimedInputStream getInputStream() {
         return this.inputStream;
     }
 
@@ -224,7 +224,7 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
      * USE THIS OUTPUT STREAM INSTEAD OF THE SOCKET OUTPUT STREAM TO AVOID ERRORS!
      * @return OutputStream
      */
-    public OutputStream getOutputStream() {
+    public CMOutputStream getOutputStream() {
         return this.outputStream;
     }
 
