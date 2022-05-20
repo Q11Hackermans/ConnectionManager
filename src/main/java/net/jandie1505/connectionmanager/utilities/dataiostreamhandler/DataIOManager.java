@@ -30,21 +30,28 @@ public class DataIOManager {
     }
 
     private void setup() {
-        this.clientEventlistener = event -> {
-            if(this.opened && event instanceof CMClientCreatedEvent) {
-                DataIOStreamHandler handler = new DataIOStreamHandler(event.getClient(), type, useMultiStreamHandler);
-                for(DataIOEventListener listener : this.listeners) {
-                    handler.addEventListener(listener);
+        this.clientEventlistener = new CMClientEventListener() {
+            @Override
+            public void onEvent(CMClientEvent event) {
+                if(opened && event instanceof CMClientCreatedEvent) {
+                    DataIOStreamHandler handler = new DataIOStreamHandler(event.getClient(), type, useMultiStreamHandler);
+                    for(DataIOEventListener listener : listeners) {
+                        handler.addEventListener(listener);
+                    }
+                    synchronized(handlers) {
+                        handlers.add(handler);
+                    }
                 }
-                handlers.add(handler);
             }
         };
 
         Thread garbageCollector = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && this.opened && server != null && !server.isClosed()) {
                 try {
-                    handlers.removeIf(DataIOStreamHandler::isClosed);
-                    handlers.remove(null);
+                    synchronized(this.handlers) {
+                        handlers.removeIf(DataIOStreamHandler::isClosed);
+                        handlers.remove(null);
+                    }
                 } catch(Exception e) {
                     Thread.currentThread().interrupt();
                     close();
@@ -66,9 +73,11 @@ public class DataIOManager {
      * @return DataIOStreamHandler (when found) or null (when not found or CMClient is not a CMSClient)
      */
     public DataIOStreamHandler getHandlerByClientUUID(UUID uuid) {
-        for(DataIOStreamHandler handler : this.handlers) {
-            if(handler.getClient() instanceof CMSClient && ((CMSClient) handler.getClient()).getUniqueId().equals(uuid)) {
-                return handler;
+        synchronized(this.handlers) {
+            for(DataIOStreamHandler handler : this.handlers) {
+                if(handler.getClient() instanceof CMSClient && ((CMSClient) handler.getClient()).getUniqueId().equals(uuid)) {
+                    return handler;
+                }
             }
         }
         return null;
