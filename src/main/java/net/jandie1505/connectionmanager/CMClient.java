@@ -164,9 +164,11 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
      * Close the connection, the Input/Output streams and shutdown the threads
      */
     public void close() {
-        if(!this.isClosed()) {
-            this.fireEvent(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
-        }
+        new Thread(() -> {
+            if(!this.isClosed()) {
+                this.fireEvent(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
+            }
+        }).start();
         this.close1();
     }
 
@@ -180,9 +182,11 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
      * @param reason Reason why the client was closed
      */
     public void close(ClientClosedReason reason) {
-        if(!this.isClosed()) {
-            this.fireEvent(new CMClientClosedEvent(this, reason));
-        }
+        new Thread(() -> {
+            if(!this.isClosed()) {
+                this.fireEvent(new CMClientClosedEvent(this, reason));
+            }
+        }).start();
         this.close1();
     }
 
