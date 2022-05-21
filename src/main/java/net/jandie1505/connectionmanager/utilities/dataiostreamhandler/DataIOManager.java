@@ -14,43 +14,33 @@ public class DataIOManager {
     private CMSServer server;
     private final List<DataIOStreamHandler> handlers;
     private final List<DataIOEventListener> listeners;
-    private CMClientEventListener clientEventlistener;
     private final DataIOType type;
-    private final DataIOStreamType useMultiStreamHandler;
+    private final DataIOStreamType inputStreamType;
     private boolean opened;
 
-    public DataIOManager(CMSServer server, DataIOType type, DataIOStreamType useMultiStreamHandler) {
+    public DataIOManager(CMSServer server, DataIOType type, DataIOStreamType inputStreamType) {
         this.server = server;
         this.handlers = new ArrayList<>();
         this.listeners = new ArrayList<>();
         this.type = type;
-        this.useMultiStreamHandler = useMultiStreamHandler;
+        this.inputStreamType = inputStreamType;
         this.opened = true;
         this.setup();
     }
 
     private void setup() {
-        this.clientEventlistener = new CMClientEventListener() {
-            @Override
-            public void onEvent(CMClientEvent event) {
-                if(opened && event instanceof CMClientCreatedEvent) {
-                    DataIOStreamHandler handler = new DataIOStreamHandler(event.getClient(), type, useMultiStreamHandler);
-                    for(DataIOEventListener listener : listeners) {
-                        handler.addEventListener(listener);
-                    }
-                    synchronized(handlers) {
-                        handlers.add(handler);
-                    }
-                }
-            }
-        };
-
-        Thread garbageCollector = new Thread(() -> {
+        Thread dataIOManagerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && this.opened && server != null && !server.isClosed()) {
                 try {
                     synchronized(this.handlers) {
                         handlers.removeIf(DataIOStreamHandler::isClosed);
                         handlers.remove(null);
+
+                        for(CMSClient client : server.getClientList()) {
+                            if(getHandlerByClient(client) == null) {
+                                handlers.add(new DataIOStreamHandler(client, type, inputStreamType));
+                            }
+                        }
                     }
                 } catch(Exception e) {
                     Thread.currentThread().interrupt();
@@ -59,11 +49,8 @@ public class DataIOManager {
                 }
             }
         });
-        garbageCollector.setName("DATAIO-MANAGER-GARBAGECOLLECTOR " +  this);
-        garbageCollector.setDaemon(true);
-        garbageCollector.start();
-
-        this.server.addGlobalListener(this.clientEventlistener);
+        dataIOManagerThread.setName("DATAIO-MANAGER- " +  this);
+        dataIOManagerThread.start();
     }
 
     /**
@@ -76,6 +63,17 @@ public class DataIOManager {
         synchronized(this.handlers) {
             for(DataIOStreamHandler handler : this.handlers) {
                 if(handler.getClient() instanceof CMSClient && ((CMSClient) handler.getClient()).getUniqueId().equals(uuid)) {
+                    return handler;
+                }
+            }
+        }
+        return null;
+    }
+
+    public DataIOStreamHandler getHandlerByClient(CMSClient client) {
+        synchronized(this.handlers) {
+            for(DataIOStreamHandler handler : this.handlers) {
+                if(handler.getClient() == client) {
                     return handler;
                 }
             }
@@ -104,9 +102,6 @@ public class DataIOManager {
     }
 
     public void close() {
-        if(this.server != null) {
-            this.server.getGlobalListeners().remove(clientEventlistener);
-        }
         for(DataIOStreamHandler handler : this.handlers) {
             handler.close();
         }
