@@ -38,7 +38,11 @@ public class DataIOManager {
 
                         for(CMSClient client : server.getClientList()) {
                             if(getHandlerByClient(client) == null) {
-                                handlers.add(new DataIOStreamHandler(client, type, inputStreamType));
+                                DataIOStreamHandler handler = new DataIOStreamHandler(client, type, inputStreamType);
+                                for(DataIOEventListener listener : listeners) {
+                                    handler.addEventListener(listener);
+                                }
+                                handlers.add(handler);
                             }
                         }
                     }
@@ -60,14 +64,7 @@ public class DataIOManager {
      * @return DataIOStreamHandler (when found) or null (when not found or CMClient is not a CMSClient)
      */
     public DataIOStreamHandler getHandlerByClientUUID(UUID uuid) {
-        synchronized(this.handlers) {
-            for(DataIOStreamHandler handler : this.handlers) {
-                if(handler.getClient() instanceof CMSClient && ((CMSClient) handler.getClient()).getUniqueId().equals(uuid)) {
-                    return handler;
-                }
-            }
-        }
-        return null;
+        return this.getHandlerByClient(server.getClientById(uuid));
     }
 
     public DataIOStreamHandler getHandlerByClient(CMSClient client) {
