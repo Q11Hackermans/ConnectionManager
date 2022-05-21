@@ -276,11 +276,7 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
     // BYTE RECEIVING AND SENDING
     public void sendByte(int data) {
         try {
-            if(data >= 0 && data <= 255) {
-                this.socket.getOutputStream().write(data);
-            } else {
-                throw new IllegalArgumentException("A byte can only be in range of 0-255");
-            }
+            this.socket.getOutputStream().write(data);
         } catch(IOException e) {
             this.close(ClientClosedReason.NO_REASON);
             e.printStackTrace();

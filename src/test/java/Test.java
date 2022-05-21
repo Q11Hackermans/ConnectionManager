@@ -20,8 +20,8 @@ public class Test implements CMClientEventListener, CMSServerEventListener, Data
         CMSServer server = new CMSServer(25577);
         server.addGlobalListener(new Test());
         server.setDefaultConnectionBehavior(ConnectionBehavior.ACCEPT);
-        DataIOManager dataIOManager = new DataIOManager(server, DataIOType.UTF, DataIOStreamType.DEFAULT_TIMED);
-        dataIOManager.addEventListener(new Test());
+        //DataIOManager dataIOManager = new DataIOManager(server, DataIOType.UTF, DataIOStreamType.DEFAULT_TIMED);
+        //dataIOManager.addEventListener(new Test());
         System.out.println("server created");
 
         Thread.sleep(3000);
@@ -29,19 +29,20 @@ public class Test implements CMClientEventListener, CMSServerEventListener, Data
         List<CMClientEventListener> listeners = new ArrayList<>();
         listeners.add(new Test());
         CMCClient client = new CMCClient("127.0.0.1", 25577, listeners);
-        DataIOStreamHandler handler = new DataIOStreamHandler(client, DataIOType.UTF, DataIOStreamType.DEFAULT_TIMED);
-        handler.addEventListener(new Test());
+        //DataIOStreamHandler handler = new DataIOStreamHandler(client, DataIOType.UTF, DataIOStreamType.DEFAULT_TIMED);
+        //handler.addEventListener(new Test());
         System.out.println("client created");
 
         Thread.sleep(10000);
 
-        handler.writeUTF("client says hello");
+        //handler.writeUTF("client says hello");
         System.out.println("client hello message");
 
         Thread.sleep(3000);
 
         for(CMSClient cmsClient : server.getClientList()) {
-            dataIOManager.getHandlerByClient(cmsClient).writeUTF("Server says hello");
+            //dataIOManager.getHandlerByClient(cmsClient).writeUTF("Server says hello");
+            cmsClient.getSocket().getOutputStream().write(-1);
         }
         System.out.println("server hello message");
 
@@ -59,8 +60,11 @@ public class Test implements CMClientEventListener, CMSServerEventListener, Data
 
     @Override
     public void onEvent(CMClientEvent event) {
-        if(!(event instanceof CMClientByteReceivedEvent)) {
+        //if(!(event instanceof CMClientByteReceivedEvent)) {
             System.out.println(event + " " + event.getClient());
+        //}
+        if(event instanceof CMClientByteReceivedEvent) {
+            System.out.println(((CMClientByteReceivedEvent) event).getData());
         }
     }
 
