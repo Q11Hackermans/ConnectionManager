@@ -47,10 +47,11 @@ public class Test implements CMClientEventListener, CMSServerEventListener, Data
 
         Thread.sleep(3000);
 
+        System.out.println("before server close");
         server.close();
         System.out.println("server closed");
 
-        Thread.sleep(1000);
+        Thread.sleep(10000);
 
         client.close();
         System.out.println("client closed");

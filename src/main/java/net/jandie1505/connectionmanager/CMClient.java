@@ -21,45 +21,38 @@ import java.util.Collection;
 import java.util.List;
 
 public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
-    private Socket socket;
-    private List<CMClientEventListener> listeners;
-    private List<CMClientEvent> eventQueue;
+    private final Socket socket;
+    private final List<CMClientEventListener> listeners;
+    private final List<CMClientEvent> eventQueue;
     private Thread managerThread;
     private Thread eventQueueThread;
-    private CMTimedInputStream inputStream;
-    private CMOutputStream outputStream;
+    private final CMTimedInputStream inputStream;
+    private final CMOutputStream outputStream;
     private CMMultiStreamHandler multiStreamHandler;
 
     // SETUP
     public CMClient(Socket socket) {
-        this.listeners = new ArrayList<>();
-        this.setup1(socket, null);
+        this(socket, List.of(), (Object) null);
     }
 
     public CMClient(Socket socket, Collection<CMClientEventListener> listeners) {
-        this.listeners = new ArrayList<>();
-        this.listeners.addAll(listeners);
-        this.setup1(socket, null);
+        this(socket, listeners, (Object) null);
     }
 
     public CMClient(Socket socket, Object... constructorParameters) {
-        this.listeners = new ArrayList<>();
-        this.setup1(socket, constructorParameters);
+        this(socket, List.of(), constructorParameters);
     }
 
     public CMClient(Socket socket, Collection<CMClientEventListener> listeners, Object... constructorParameters) {
-        this.listeners = new ArrayList<>();
-        this.listeners.addAll(listeners);
-        this.setup1(socket, constructorParameters);
-    }
-
-    private void setup1(Socket socket, Object[] constructorParameters) {
         this.socket = socket;
 
         this.inputStream = new CMTimedInputStream(this);
         this.outputStream = new CMOutputStream(this);
 
         this.eventQueue = new ArrayList<>();
+
+        this.listeners = new ArrayList<>();
+        this.listeners.addAll(listeners);
 
         this.setup(constructorParameters);
 
@@ -68,7 +61,7 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
                 try {
                     try {
                         if(stopcondition()) {
-                            this.close();
+                            this.close(ClientClosedReason.STOPCONDITION_TRIGGERED);
                         }
                     } catch(Exception ignored) {}
 
@@ -93,7 +86,7 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
         this.eventQueueThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 synchronized(this.eventQueue) {
-                    if(eventQueue != null && eventQueue.size() > 0) {
+                    if(eventQueue.size() > 0) {
                         for(CMClientEventListener listener : this.listeners) {
                             try {
                                 listener.onEvent(eventQueue.get(0));
@@ -164,11 +157,9 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
      * Close the connection, the Input/Output streams and shutdown the threads
      */
     public void close() {
-        new Thread(() -> {
-            if(!this.isClosed()) {
-                this.fireEvent(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
-            }
-        }).start();
+        try {
+            this.eventQueue.add(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
+        } catch(Exception ignored) {}
         this.close1();
     }
 
@@ -182,11 +173,9 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
      * @param reason Reason why the client was closed
      */
     public void close(ClientClosedReason reason) {
-        new Thread(() -> {
-            if(!this.isClosed()) {
-                this.fireEvent(new CMClientClosedEvent(this, reason));
-            }
-        }).start();
+        try {
+            this.fireEvent(new CMClientClosedEvent(this, reason));
+        } catch(Exception ignored) {}
         this.close1();
     }
 
