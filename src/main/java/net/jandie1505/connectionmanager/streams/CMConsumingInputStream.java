@@ -23,18 +23,16 @@ public class CMConsumingInputStream extends CMInputStream {
         this.thread = new Thread(() -> {
             this.count = 1000;
             while(!Thread.currentThread().isInterrupted() && !owner.isClosed()) {
-                synchronized(this.queue) {
-                    if(!this.queue.isEmpty()) {
-                        if(this.queue.size() > this.streamByteLimit) {
-                            this.queue.clear();
-                            this.getOwner().fireEvent(new CMClientInputStreamByteLimitReachedEvent(this.getOwner().getEventClient(), this));
+                if(!this.queue.isEmpty()) {
+                    if(this.queue.size() > this.streamByteLimit) {
+                        this.queue.clear();
+                        this.getOwner().fireEvent(new CMClientInputStreamByteLimitReachedEvent(this.getOwner().getEventClient(), this));
+                    } else {
+                        if(this.count > 0) {
+                            this.count--;
                         } else {
-                            if(this.count > 0) {
-                                this.count--;
-                            } else {
-                                this.queue.remove(0);
-                                this.count = 1000;
-                            }
+                            this.queue.remove(0);
+                            this.count = 1000;
                         }
                     }
                 }
@@ -48,26 +46,22 @@ public class CMConsumingInputStream extends CMInputStream {
         if(this.thread.isInterrupted() || this.getOwner().isClosed()) {
             return -1;
         }
-        synchronized(this.queue) {
-            while(this.queue.isEmpty()) {
-                if(this.thread.isInterrupted() || this.getOwner().isClosed()) {
-                    return -1;
-                }
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException ignored) {}
+        while(this.queue.isEmpty()) {
+            if(this.thread.isInterrupted() || this.getOwner().isClosed()) {
+                return -1;
             }
-            this.count = 1000;
-            return this.queue.remove(0);
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException ignored) {}
         }
+        this.count = 1000;
+        return this.queue.remove(0);
     }
 
     @Override
     @Deprecated
     public void send(int b) {
-        synchronized(this.queue) {
-            this.queue.add(b);
-        }
+        this.queue.add(b);
     }
 
     public long getByteExpiration() {
