@@ -17,7 +17,7 @@ public class CMConsumingInputStream extends CMInputStream {
     public CMConsumingInputStream(StreamOwner owner) {
         super(owner);
         this.queue = Collections.synchronizedList(new ArrayList<>());
-        this.byteExpiration = 10;
+        this.byteExpiration = 10000;
         this.streamByteLimit = 2500000;
 
         this.thread = new Thread(() -> {
@@ -30,9 +30,12 @@ public class CMConsumingInputStream extends CMInputStream {
                     } else {
                         if(this.count > 0) {
                             this.count--;
+                            try {
+                                Thread.sleep(1);
+                            } catch (InterruptedException ignored) {}
                         } else {
                             this.queue.remove(0);
-                            this.count = 1000;
+                            this.count = this.byteExpiration;
                         }
                     }
                 }
@@ -42,7 +45,7 @@ public class CMConsumingInputStream extends CMInputStream {
 
 
     @Override
-    public int read() {
+    public synchronized int read() {
         if(this.thread.isInterrupted() || this.getOwner().isClosed()) {
             return -1;
         }
@@ -54,7 +57,7 @@ public class CMConsumingInputStream extends CMInputStream {
                 Thread.sleep(1);
             } catch (InterruptedException ignored) {}
         }
-        this.count = 1000;
+        this.count = this.byteExpiration;
         return this.queue.remove(0);
     }
 
