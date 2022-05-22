@@ -17,7 +17,7 @@ public class CMConsumingInputStream extends CMInputStream {
     public CMConsumingInputStream(StreamOwner owner) {
         super(owner);
         this.queue = Collections.synchronizedList(new ArrayList<>());
-        this.byteExpiration = 10000;
+        this.byteExpiration = 1000;
         this.streamByteLimit = 2500000;
 
         this.thread = new Thread(() -> {
