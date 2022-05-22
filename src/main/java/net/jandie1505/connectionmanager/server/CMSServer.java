@@ -32,9 +32,9 @@ public class CMSServer {
     // SETUP
     public CMSServer(int port) throws IOException {
         this.server = new ServerSocket(port);
-        this.clients = new HashMap<>();
+        this.clients = Collections.synchronizedMap(new HashMap<>());
         this.defaultConnectionBehavior = ConnectionBehavior.REFUSE;
-        this.pendingConnections = new HashMap<>();
+        this.pendingConnections = Collections.synchronizedMap(new HashMap<>());
         this.connectionReactionTime = 1000;
         this.eventQueue = new ArrayList<>();
 
