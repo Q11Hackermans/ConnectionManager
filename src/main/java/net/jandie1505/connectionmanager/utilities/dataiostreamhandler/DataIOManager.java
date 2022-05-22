@@ -6,9 +6,7 @@ import net.jandie1505.connectionmanager.events.CMClientEvent;
 import net.jandie1505.connectionmanager.server.CMSClient;
 import net.jandie1505.connectionmanager.server.CMSServer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class DataIOManager {
     private CMSServer server;
@@ -20,7 +18,7 @@ public class DataIOManager {
 
     public DataIOManager(CMSServer server, DataIOType type, DataIOStreamType inputStreamType) {
         this.server = server;
-        this.handlers = new ArrayList<>();
+        this.handlers = Collections.synchronizedList(new ArrayList<>());
         this.listeners = new ArrayList<>();
         this.type = type;
         this.inputStreamType = inputStreamType;
@@ -100,7 +98,12 @@ public class DataIOManager {
 
     public void close() {
         for(DataIOStreamHandler handler : this.handlers) {
-            handler.close();
+            try {
+                handler.close();
+            } catch(Exception e) {
+                System.err.println("[CM] Error while closing handler " + Arrays.toString(e.getStackTrace()));
+            }
+
         }
         this.opened = false;
         this.server = null;

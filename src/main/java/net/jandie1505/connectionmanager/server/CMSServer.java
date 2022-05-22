@@ -47,10 +47,12 @@ public class CMSServer {
             @Override
             public void run() {
                 while(!Thread.currentThread().isInterrupted() && !server.isClosed()) {
-                    for(UUID uuid : clients.keySet()) {
-                        CMSClient client = clients.get(uuid);
-                        if(client == null || client.isClosed()) {
-                            clients.remove(uuid);
+                    synchronized(clients) {
+                        for(UUID uuid : clients.keySet()) {
+                            CMSClient client = clients.get(uuid);
+                            if(client == null || client.isClosed()) {
+                                clients.remove(uuid);
+                            }
                         }
                     }
                 }
@@ -81,31 +83,35 @@ public class CMSServer {
 
         Thread pendingClientsThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
-                for(UUID uuid : pendingConnections.keySet()) {
-                    CMSPendingClient client = pendingConnections.get(uuid);
-                    try {
-                        if(client.getTime() > 0) {
-                            client.setTime(client.getTime() - 1);
-                            Thread.sleep(1);
-                            checkPendingClient(uuid);
-                        } else {
-                            if(defaultConnectionBehavior == ConnectionBehavior.ACCEPT) {
-                                client.setState(PendingClientState.ACCEPTED);
+                synchronized(pendingConnections) {
+                    for(UUID uuid : pendingConnections.keySet()) {
+                        CMSPendingClient client = pendingConnections.get(uuid);
+                        try {
+                            if(client.getTime() > 0) {
+                                client.setTime(client.getTime() - 1);
+                                Thread.sleep(1);
+                                checkPendingClient(uuid);
                             } else {
-                                client.setState(PendingClientState.DENIED);
+                                if(defaultConnectionBehavior == ConnectionBehavior.ACCEPT) {
+                                    client.setState(PendingClientState.ACCEPTED);
+                                } else {
+                                    client.setState(PendingClientState.DENIED);
+                                }
+                                checkPendingClient(uuid);
                             }
-                            checkPendingClient(uuid);
+                        } catch(InterruptedException e) {
+                            e.printStackTrace();
                         }
-                    } catch(InterruptedException e) {
-                        e.printStackTrace();
                     }
                 }
             }
             if(this.server.isClosed()) {
-                for(UUID uuid : pendingConnections.keySet()) {
-                    CMSPendingClient client = pendingConnections.get(uuid);
-                    client.setState(PendingClientState.DENIED);
-                    checkPendingClient(uuid);
+                synchronized(pendingConnections) {
+                    for(UUID uuid : pendingConnections.keySet()) {
+                        CMSPendingClient client = pendingConnections.get(uuid);
+                        client.setState(PendingClientState.DENIED);
+                        checkPendingClient(uuid);
+                    }
                 }
             }
         });
@@ -202,14 +208,18 @@ public class CMSServer {
     private UUID getRandomUniqueId() {
         UUID uuid = UUID.randomUUID();
         boolean unique = true;
-        for(UUID compare : this.clients.keySet()) {
-            if(uuid.equals(compare)) {
-                unique = false;
+        synchronized(this.clients) {
+            for(UUID compare : this.clients.keySet()) {
+                if(uuid.equals(compare)) {
+                    unique = false;
+                }
             }
         }
-        for(UUID compare : this.pendingConnections.keySet()) {
-            if(uuid.equals(compare)) {
-                unique = false;
+        synchronized(this.pendingConnections) {
+            for(UUID compare : this.pendingConnections.keySet()) {
+                if(uuid.equals(compare)) {
+                    unique = false;
+                }
             }
         }
         if(unique) {
@@ -233,10 +243,12 @@ public class CMSServer {
      * @return UUID
      */
     protected UUID getIdOfClient(CMSClient client) {
-        for(UUID uuid : this.clients.keySet()) {
-            CMSClient c = this.clients.get(uuid);
-            if(client == c) {
-                return uuid;
+        synchronized(this.clients) {
+            for(UUID uuid : this.clients.keySet()) {
+                CMSClient c = this.clients.get(uuid);
+                if(client == c) {
+                    return uuid;
+                }
             }
         }
         return null;
@@ -248,8 +260,10 @@ public class CMSServer {
      */
     public List<CMSClient> getClientList() {
         List<CMSClient> returnList = new ArrayList<>();
-        for(UUID uuid : this.clients.keySet()) {
-            returnList.add(this.clients.get(uuid));
+        synchronized(this.clients) {
+            for(UUID uuid : this.clients.keySet()) {
+                returnList.add(this.clients.get(uuid));
+            }
         }
         return returnList;
     }
@@ -286,7 +300,10 @@ public class CMSServer {
         if(this.thread != null) {
             this.thread.stop();
         }
-        this.closeAll();
+        try {
+            this.closeAll();
+        } catch(Exception ignored) {}
+
         this.clients.clear();
     }
 
