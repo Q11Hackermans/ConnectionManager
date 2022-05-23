@@ -84,7 +84,8 @@ public class CMSServer {
         Thread pendingClientsThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
                 synchronized(pendingConnections) {
-                    for(UUID uuid : pendingConnections.keySet()) {
+                    Map<UUID, CMSPendingClient> pendingConnectionsCopy = Map.copyOf(pendingConnections);
+                    for(UUID uuid : pendingConnectionsCopy.keySet()) {
                         CMSPendingClient client = pendingConnections.get(uuid);
                         try {
                             if(client.getTime() > 0) {
