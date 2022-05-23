@@ -101,7 +101,7 @@ public class DataIOManager {
             try {
                 handler.close();
             } catch(Exception e) {
-                System.err.println("[CM] Error while closing handler " + Arrays.toString(e.getStackTrace()));
+                System.err.println("[CM] Error while closing handler: " + e + ": " + Arrays.toString(e.getStackTrace()));
             }
 
         }
