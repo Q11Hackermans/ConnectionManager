@@ -275,11 +275,15 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
 
     // BYTE RECEIVING AND SENDING
     public void sendByte(int data) {
-        try {
-            this.socket.getOutputStream().write(data);
-        } catch(IOException e) {
-            this.close(ClientClosedReason.NO_REASON);
-            e.printStackTrace();
+        if(!this.isClosed()) {
+            try {
+                this.socket.getOutputStream().write(data);
+            } catch(IOException e) {
+                this.close(ClientClosedReason.NO_REASON);
+                e.printStackTrace();
+            }
+        } else {
+
         }
     }
 

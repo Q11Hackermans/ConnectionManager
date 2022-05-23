@@ -13,12 +13,50 @@ import net.jandie1505.connectionmanager.utilities.dataiostreamhandler.events.Dat
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class Test implements CMClientEventListener, CMSServerEventListener, DataIOEventListener {
     private static long timeStart;
     private static long timeEnd;
 
     public static void main(String[] args) throws Exception {
+        performanceTest();
+    }
+
+    private static void performanceTest() throws Exception {
+        CMSServer server = new CMSServer(25577);
+        server.addListener(new Test());
+        server.addGlobalListener(new Test());
+        server.setDefaultConnectionBehavior(ConnectionBehavior.ACCEPT);
+        System.out.println("server created");
+
+        Thread.sleep(3000);
+
+        List<CMClientEventListener> listeners = new ArrayList<>();
+        listeners.add(new Test());
+        CMCClient client1 = new CMCClient("127.0.0.1", 25577, listeners);
+        System.out.println("created client 1");
+
+        Thread.sleep(2000);
+
+        CMCClient client2 = new CMCClient("127.0.0.1", 25577, listeners);
+        System.out.println("created client 2");
+
+        Thread.sleep(2000);
+
+        CMCClient client3 = new CMCClient("127.0.0.1", 25577, listeners);
+        System.out.println("created client 3");
+
+        Thread.sleep(2000);
+
+        server.close();
+        client1.close();
+        client2.close();
+        client3.close();
+    }
+
+    private static void timeOfInputStreams() throws Exception {
         timeStart = 0;
         timeEnd = 0;
 
