@@ -30,15 +30,18 @@ public class CMConsumingInputStream extends CMInputStream {
                     } else {
                         if(this.count > 0) {
                             this.count--;
-                            try {
-                                Thread.sleep(1);
-                            } catch (InterruptedException ignored) {}
+
+                            // SLEEP IS NOT REQUIRED HERE BECAUSE THE ENTIRE THREAD WILL SLEEP 1 MILLISECOND
                         } else {
                             this.queue.remove(0);
                             this.count = this.byteExpiration;
                         }
                     }
                 }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
         });
     }

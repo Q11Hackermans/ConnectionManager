@@ -75,6 +75,10 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
                 } catch (IOException e) {
                     this.close(ClientClosedReason.CONNECTION_RESET);
                 }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
         });
         this.managerThread.setName(this + "-ManagerThread");
@@ -93,6 +97,10 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
                         }
                         eventQueue.remove(0);
                     }
+
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
             }
         });

@@ -55,6 +55,10 @@ public class CMSServer {
                             }
                         }
                     }
+
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
             }
         });
@@ -65,7 +69,7 @@ public class CMSServer {
         this.eventQueueThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !server.isClosed()) {
                 synchronized(this.eventQueue) {
-                    if(eventQueue != null && eventQueue.size() > 0) {
+                    if(eventQueue.size() > 0) {
                         for(CMSServerEventListener listener : this.listeners) {
                             try {
                                 listener.onEvent(eventQueue.get(0));
@@ -76,6 +80,10 @@ public class CMSServer {
                         eventQueue.remove(0);
                     }
                 }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
         });
         eventQueueThread.setName(this + "-EventHandlerThread");
@@ -104,6 +112,10 @@ public class CMSServer {
                         }
                     }
                 }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
             if(this.server.isClosed()) {
                 synchronized(pendingConnections) {
@@ -129,6 +141,10 @@ public class CMSServer {
                     Thread.currentThread().interrupt();
                     e.printStackTrace();
                 }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
         });
         this.thread.setName(this + "-ConnectionThread");

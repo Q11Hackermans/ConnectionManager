@@ -34,6 +34,10 @@ public class CMMultiStreamHandler implements StreamOwner, ByteSender {
                         }
                     }
                 }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
         }).start();
     }
