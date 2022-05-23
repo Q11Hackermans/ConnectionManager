@@ -176,18 +176,22 @@ public class DataIOStreamHandler {
     public void close() {
         this.thread.interrupt();
         this.eventQueueThread.interrupt();
+
         try {
             this.thread.stop();
         } catch(Exception e) {
             e.printStackTrace();
         }
+
         try {
             this.eventQueueThread.stop();
         } catch(Exception e) {
             e.printStackTrace();
         }
+
         this.opened = false;
-        if(this.client.getMultiStreamHandler() != null) {
+
+        if(this.client != null && this.client.getMultiStreamHandler() != null) {
             if(this.client.getMultiStreamHandler().getInputStreams().contains((CMInputStream) this.inputStream)) {
                 this.client.getMultiStreamHandler().removeInputStream(this.client.getMultiStreamHandler().getInputStreams().indexOf((CMInputStream) this.inputStream));
             }
@@ -195,6 +199,7 @@ public class DataIOStreamHandler {
                 this.client.getMultiStreamHandler().removeOutputStream(this.client.getMultiStreamHandler().getOutputStreams().indexOf((CMOutputStream) this.outputStream));
             }
         }
+
         this.client = null;
         this.inputStream = null;
         this.outputStream = null;
