@@ -18,6 +18,8 @@ public abstract class CMListenerAdapter implements CMClientEventListener, CMSSer
 
     public void onClientInputStreamByteLimitReached(CMClientInputStreamByteLimitReachedEvent event) {}
 
+    public void onClientError(CMClientErrorEvent event) {}
+
     public void onUnknownClientEvent(CMClientEvent event) {}
 
     // SERVER
@@ -64,6 +66,8 @@ public abstract class CMListenerAdapter implements CMClientEventListener, CMSSer
             onClientByteReceived((CMClientByteReceivedEvent) event);
         } else if(event instanceof CMClientInputStreamByteLimitReachedEvent) {
             onClientInputStreamByteLimitReached((CMClientInputStreamByteLimitReachedEvent) event);
+        } else if(event instanceof CMClientErrorEvent) {
+            onClientError((CMClientErrorEvent) event);
         } else {
             onUnknownClientEvent(event);
         }

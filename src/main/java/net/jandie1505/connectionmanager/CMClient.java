@@ -1,10 +1,7 @@
 package net.jandie1505.connectionmanager;
 
 import net.jandie1505.connectionmanager.enums.ClientClosedReason;
-import net.jandie1505.connectionmanager.events.CMClientByteReceivedEvent;
-import net.jandie1505.connectionmanager.events.CMClientClosedEvent;
-import net.jandie1505.connectionmanager.events.CMClientCreatedEvent;
-import net.jandie1505.connectionmanager.events.CMClientEvent;
+import net.jandie1505.connectionmanager.events.*;
 import net.jandie1505.connectionmanager.interfaces.ByteSender;
 import net.jandie1505.connectionmanager.interfaces.StreamOwner;
 import net.jandie1505.connectionmanager.streams.CMTimedInputStream;
@@ -280,10 +277,8 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
                 this.socket.getOutputStream().write(data);
             } catch(IOException e) {
                 this.close(ClientClosedReason.NO_REASON);
-                e.printStackTrace();
+                this.fireEvent(new CMClientErrorEvent(this, e));
             }
-        } else {
-
         }
     }
 
