@@ -32,12 +32,12 @@ public class CMMultiStreamHandler implements StreamOwner, ByteSender {
                         for(CMInputStream inputStream : inputStreams) {
                             inputStream.send(byteQueue.remove(0));
                         }
+                    } else {
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException ignored) {}
                     }
                 }
-
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException ignored) {}
             }
         }).start();
     }

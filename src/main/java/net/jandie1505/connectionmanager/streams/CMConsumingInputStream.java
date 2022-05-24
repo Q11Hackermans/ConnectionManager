@@ -37,11 +37,11 @@ public class CMConsumingInputStream extends CMInputStream {
                             this.count = this.byteExpiration;
                         }
                     }
+                } else {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
-
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException ignored) {}
             }
         });
     }

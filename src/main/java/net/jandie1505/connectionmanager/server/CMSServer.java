@@ -78,12 +78,12 @@ public class CMSServer {
                             }
                         }
                         eventQueue.remove(0);
+                    } else {
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException ignored) {}
                     }
                 }
-
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException ignored) {}
             }
         });
         eventQueueThread.setName(this + "-EventHandlerThread");

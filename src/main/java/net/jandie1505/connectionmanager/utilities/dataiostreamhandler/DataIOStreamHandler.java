@@ -73,10 +73,6 @@ public class DataIOStreamHandler {
                     close();
                     e.printStackTrace();
                 }
-
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException ignored) {}
             }
         });
         this.thread.setName(this + "-ListenerThread");
@@ -93,11 +89,11 @@ public class DataIOStreamHandler {
                         }
                     }
                     eventQueue.remove(0);
+                } else {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
-
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException ignored) {}
             }
         });
         this.eventQueueThread.setName(this + "-EventQueueThread");
