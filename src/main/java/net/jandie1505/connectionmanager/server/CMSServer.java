@@ -36,7 +36,7 @@ public class CMSServer {
         this.defaultConnectionBehavior = ConnectionBehavior.REFUSE;
         this.pendingConnections = Collections.synchronizedMap(new HashMap<>());
         this.connectionReactionTime = 1000;
-        this.eventQueue = new ArrayList<>();
+        this.eventQueue = Collections.synchronizedList(new ArrayList<>());
 
         this.listeners = new ArrayList<>();
 
@@ -68,8 +68,8 @@ public class CMSServer {
 
         this.eventQueueThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !server.isClosed()) {
-                synchronized(this.eventQueue) {
-                    if(eventQueue.size() > 0) {
+                if(eventQueue.size() > 0) {
+                    synchronized(this.eventQueue) {
                         for(CMSServerEventListener listener : this.listeners) {
                             try {
                                 listener.onEvent(eventQueue.get(0));
@@ -77,12 +77,12 @@ public class CMSServer {
                                 e.printStackTrace();
                             }
                         }
-                        eventQueue.remove(0);
-                    } else {
-                        try {
-                            Thread.sleep(1);
-                        } catch (InterruptedException ignored) {}
                     }
+                    eventQueue.remove(0);
+                } else {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
             }
         });
