@@ -27,6 +27,7 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
     private final CMTimedInputStream inputStream;
     private final CMOutputStream outputStream;
     private CMMultiStreamHandler multiStreamHandler;
+    private boolean closedEventFired;
 
     // SETUP
     public CMClient(Socket socket) {
@@ -42,6 +43,8 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
     }
 
     public CMClient(Socket socket, Collection<CMClientEventListener> listeners, Object... constructorParameters) {
+        this.closedEventFired = false;
+
         this.socket = socket;
 
         this.inputStream = new CMTimedInputStream(this);
@@ -158,9 +161,21 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
     /**
      * Close the connection, the Input/Output streams and shutdown the threads
      */
-    public void close() {
+    public synchronized void close() {
         try {
-            this.eventQueue.add(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
+            if(!this.closedEventFired) {
+                new Thread(() -> {
+                    Thread.currentThread().interrupt();
+                    for(CMClientEventListener listener : this.listeners) {
+                        try {
+                            listener.onEvent(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
+                        } catch(Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+                this.closedEventFired = true;
+            }
         } catch(Exception ignored) {}
         this.close1();
     }
@@ -174,9 +189,21 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
      * Close the connection, the Input/Output streams and shutdown the threads (with a specific reason)
      * @param reason Reason why the client was closed
      */
-    public void close(ClientClosedReason reason) {
+    public synchronized void close(ClientClosedReason reason) {
         try {
-            this.fireEvent(new CMClientClosedEvent(this, reason));
+            if(!this.closedEventFired) {
+                new Thread(() -> {
+                    Thread.currentThread().interrupt();
+                    for(CMClientEventListener listener : this.listeners) {
+                        try {
+                            listener.onEvent(new CMClientClosedEvent(this, reason));
+                        } catch(Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+                this.closedEventFired = true;
+            }
         } catch(Exception ignored) {}
         this.close1();
     }

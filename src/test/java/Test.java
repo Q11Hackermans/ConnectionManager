@@ -46,7 +46,7 @@ public class Test implements CMClientEventListener, CMSServerEventListener, Data
         CMCClient client3 = new CMCClient("127.0.0.1", 25577, listeners);
         System.out.println("created client 3");
 
-        Thread.sleep(2000);
+        Thread.sleep(5000);
 
         server.close();
         client1.close();
