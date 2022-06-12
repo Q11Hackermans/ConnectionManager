@@ -67,7 +67,6 @@ public class CMSServer {
         });
         this.garbageCollection.setName(this + "-GarbageCollectionThread");
         this.garbageCollection.setDaemon(true);
-        this.garbageCollection.start();
 
         this.eventQueueThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !server.isClosed() && this.isOperational()) {
@@ -91,7 +90,6 @@ public class CMSServer {
             this.close();
         });
         eventQueueThread.setName(this + "-EventHandlerThread");
-        eventQueueThread.start();
 
         this.pendingClientsThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed() && this.isOperational()) {
@@ -134,7 +132,6 @@ public class CMSServer {
             }
         });
         this.pendingClientsThread.setName(this + "-PendingClientsThread");
-        this.pendingClientsThread.start();
 
         this.thread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed() && this.isOperational()) {
@@ -155,6 +152,11 @@ public class CMSServer {
             this.close();
         });
         this.thread.setName(this + "-ConnectionThread");
+
+
+        this.garbageCollection.start();
+        this.eventQueueThread.start();
+        this.pendingClientsThread.start();
         this.thread.start();
 
         this.fireEvent(new CMSServerStartedEvent(this));
