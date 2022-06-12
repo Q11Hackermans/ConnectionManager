@@ -15,6 +15,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
@@ -46,7 +47,7 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
         this.inputStream = new CMTimedInputStream(this);
         this.outputStream = new CMOutputStream(this);
 
-        this.eventQueue = new ArrayList<>();
+        this.eventQueue = Collections.synchronizedList(new ArrayList<>());
 
         this.listeners = new ArrayList<>();
         this.listeners.addAll(listeners);
@@ -82,8 +83,8 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
 
         this.eventQueueThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
-                synchronized(this.eventQueue) {
-                    if(eventQueue.size() > 0) {
+                if(!eventQueue.isEmpty()) {
+                    synchronized(eventQueue) {
                         for(CMClientEventListener listener : this.listeners) {
                             try {
                                 listener.onEvent(eventQueue.get(0));
@@ -91,8 +92,12 @@ public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
                                 e.printStackTrace();
                             }
                         }
-                        eventQueue.remove(0);
                     }
+                    eventQueue.remove(0);
+                } else {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
             }
         });

@@ -61,7 +61,11 @@ public class CMTimedInputStream extends CMInputStream {
      * @param millis Time in milliseconds
      */
     public void setTimeInterval(long millis) {
-        this.time = millis;
+        if(millis > 0) {
+            this.time = millis;
+        } else {
+            throw new IllegalArgumentException("The time interval must be higher than 0");
+        }
     }
 
     /**

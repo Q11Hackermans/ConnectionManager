@@ -16,6 +16,8 @@ public class CMSServer {
     // BASIC THINGS
     private final ServerSocket server;
     private final Map<UUID, CMSClient> clients;
+    private final Thread garbageCollection;
+    private final Thread pendingClientsThread;
     private final Thread thread;
     private final Thread eventQueueThread;
     private final Map<UUID, CMSPendingClient> pendingConnections;
@@ -36,36 +38,41 @@ public class CMSServer {
         this.defaultConnectionBehavior = ConnectionBehavior.REFUSE;
         this.pendingConnections = Collections.synchronizedMap(new HashMap<>());
         this.connectionReactionTime = 1000;
-        this.eventQueue = new ArrayList<>();
+        this.eventQueue = Collections.synchronizedList(new ArrayList<>());
 
         this.listeners = new ArrayList<>();
 
         this.globalClientListeners = new ArrayList<>();
 
         // This will remove all clients which are disconnected
-        Thread garbageCollection = new Thread(new Runnable() {
+        this.garbageCollection = new Thread(new Runnable() {
             @Override
             public void run() {
-                while(!Thread.currentThread().isInterrupted() && !server.isClosed()) {
+                while(!Thread.currentThread().isInterrupted() && !server.isClosed() && isOperational()) {
                     synchronized(clients) {
-                        for(UUID uuid : clients.keySet()) {
+                        for(UUID uuid : getClients().keySet()) {
                             CMSClient client = clients.get(uuid);
                             if(client == null || client.isClosed()) {
                                 clients.remove(uuid);
                             }
                         }
                     }
+
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
+                close();
             }
         });
-        garbageCollection.setName(this + "-GarbageCollectionThread");
-        garbageCollection.setDaemon(true);
-        garbageCollection.start();
+        this.garbageCollection.setName(this + "-GarbageCollectionThread");
+        this.garbageCollection.setDaemon(true);
+        this.garbageCollection.start();
 
         this.eventQueueThread = new Thread(() -> {
-            while(!Thread.currentThread().isInterrupted() && !server.isClosed()) {
-                synchronized(this.eventQueue) {
-                    if(eventQueue != null && eventQueue.size() > 0) {
+            while(!Thread.currentThread().isInterrupted() && !server.isClosed() && this.isOperational()) {
+                if(eventQueue.size() > 0) {
+                    synchronized(this.eventQueue) {
                         for(CMSServerEventListener listener : this.listeners) {
                             try {
                                 listener.onEvent(eventQueue.get(0));
@@ -73,16 +80,21 @@ public class CMSServer {
                                 e.printStackTrace();
                             }
                         }
-                        eventQueue.remove(0);
                     }
+                    eventQueue.remove(0);
+                } else {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
             }
+            this.close();
         });
         eventQueueThread.setName(this + "-EventHandlerThread");
         eventQueueThread.start();
 
-        Thread pendingClientsThread = new Thread(() -> {
-            while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
+        this.pendingClientsThread = new Thread(() -> {
+            while(!Thread.currentThread().isInterrupted() && !this.server.isClosed() && this.isOperational()) {
                 synchronized(pendingConnections) {
                     Map<UUID, CMSPendingClient> pendingConnectionsCopy = Map.copyOf(pendingConnections);
                     for(UUID uuid : pendingConnectionsCopy.keySet()) {
@@ -105,7 +117,12 @@ public class CMSServer {
                         }
                     }
                 }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
+            this.close();
             if(this.server.isClosed()) {
                 synchronized(pendingConnections) {
                     for(UUID uuid : pendingConnections.keySet()) {
@@ -116,11 +133,11 @@ public class CMSServer {
                 }
             }
         });
-        pendingClientsThread.setName(this + "-PendingClientsThread");
-        pendingClientsThread.start();
+        this.pendingClientsThread.setName(this + "-PendingClientsThread");
+        this.pendingClientsThread.start();
 
         this.thread = new Thread(() -> {
-            while(!Thread.currentThread().isInterrupted() && !this.server.isClosed()) {
+            while(!Thread.currentThread().isInterrupted() && !this.server.isClosed() && this.isOperational()) {
                 try {
                     CMSPendingClient client = new CMSPendingClient(server.accept(), connectionReactionTime);
                     UUID uuid = getRandomUniqueId();
@@ -130,7 +147,12 @@ public class CMSServer {
                     Thread.currentThread().interrupt();
                     e.printStackTrace();
                 }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
+            this.close();
         });
         this.thread.setName(this + "-ConnectionThread");
         this.thread.start();
@@ -314,6 +336,14 @@ public class CMSServer {
      */
     public boolean isClosed() {
         return this.server.isClosed();
+    }
+
+    /**
+     * Returns whether the server is operational (means all threads are alive) or not.
+     * @return boolean
+     */
+    public boolean isOperational() {
+        return this.garbageCollection.isAlive() && this.eventQueueThread.isAlive() && this.thread.isAlive() && this.pendingClientsThread.isAlive();
     }
 
     // LISTENERS

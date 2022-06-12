@@ -49,6 +49,10 @@ public class DataIOManager {
                     close();
                     e.printStackTrace();
                 }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
         });
         dataIOManagerThread.setName("DATAIO-MANAGER- " +  this);

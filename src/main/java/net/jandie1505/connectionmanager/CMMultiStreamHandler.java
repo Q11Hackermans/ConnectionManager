@@ -9,6 +9,7 @@ import net.jandie1505.connectionmanager.streams.CMTimedInputStream;
 import net.jandie1505.connectionmanager.streams.CMOutputStream;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class CMMultiStreamHandler implements StreamOwner, ByteSender {
@@ -22,17 +23,21 @@ public class CMMultiStreamHandler implements StreamOwner, ByteSender {
         this.owner = owner;
         this.inputStreams = new ArrayList<>();
         this.outputStreams = new ArrayList<>();
-        this.byteQueue = new ArrayList<>();
+        this.byteQueue = Collections.synchronizedList(new ArrayList<>());
 
         new Thread(() -> {
             Thread.currentThread().setName(this + "-Thread");
             while(!Thread.currentThread().isInterrupted() && !this.isClosed()) {
-                synchronized(byteQueue) {
-                    if(byteQueue.size() > 0) {
+                if(!byteQueue.isEmpty()) {
+                    synchronized(byteQueue) {
                         for(CMInputStream inputStream : inputStreams) {
                             inputStream.send(byteQueue.remove(0));
                         }
                     }
+                } else {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
             }
         }).start();
@@ -40,9 +45,7 @@ public class CMMultiStreamHandler implements StreamOwner, ByteSender {
 
     // SEND BYTES TO INPUTSTREAM
     protected void send(int b) {
-        synchronized(this.byteQueue) {
-            this.byteQueue.add(b);
-        }
+        this.byteQueue.add(b);
     }
 
     // SEND BYTES TO CLIENT
