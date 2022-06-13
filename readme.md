@@ -1,5 +1,6 @@
 # ConnectionManager
 
+[![](https://img.shields.io/badge/Java-11-blue)
 [![](https://jitpack.io/v/jandie1505/ConnectionManager.svg)](https://jitpack.io/#jandie1505/ConnectionManager)
 [![CodeFactor](https://www.codefactor.io/repository/github/jandie1505/connectionmanager/badge)](https://www.codefactor.io/repository/github/jandie1505/connectionmanager)
   
