@@ -21,7 +21,13 @@ public enum ClientClosedReason {
     /**
      * The connection failed (When socket.isConnected() == false).
      */
-    CONNECTION_FAILED(4);
+    CONNECTION_FAILED(4),
+
+    /**
+     * The stopcondition of the client was triggered.
+     * In CMSClients, this happens if the CMSServer that owns the client was shut down.
+     */
+    STOPCONDITION_TRIGGERED(5);
 
     private final int id;
 

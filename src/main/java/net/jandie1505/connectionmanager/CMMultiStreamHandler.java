@@ -1,35 +1,43 @@
 package net.jandie1505.connectionmanager;
 
+import net.jandie1505.connectionmanager.events.CMClientEvent;
 import net.jandie1505.connectionmanager.interfaces.ByteSender;
-import net.jandie1505.connectionmanager.interfaces.ThreadStopCondition;
+import net.jandie1505.connectionmanager.interfaces.StreamOwner;
+import net.jandie1505.connectionmanager.streams.CMConsumingInputStream;
 import net.jandie1505.connectionmanager.streams.CMInputStream;
+import net.jandie1505.connectionmanager.streams.CMTimedInputStream;
 import net.jandie1505.connectionmanager.streams.CMOutputStream;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public class CMMultiStreamHandler implements ThreadStopCondition, ByteSender {
-    private CMClient owner;
-    private List<CMInputStream> inputStreams;
-    private List<CMOutputStream> outputStreams;
-    private List<Integer> byteQueue;
+public class CMMultiStreamHandler implements StreamOwner, ByteSender {
+    private final CMClient owner;
+    private final List<CMInputStream> inputStreams;
+    private final List<CMOutputStream> outputStreams;
+    private final List<Integer> byteQueue;
 
     // SETUP
     public CMMultiStreamHandler(CMClient owner) {
         this.owner = owner;
         this.inputStreams = new ArrayList<>();
         this.outputStreams = new ArrayList<>();
-        this.byteQueue = new ArrayList<>();
+        this.byteQueue = Collections.synchronizedList(new ArrayList<>());
 
         new Thread(() -> {
             Thread.currentThread().setName(this + "-Thread");
             while(!Thread.currentThread().isInterrupted() && !this.isClosed()) {
-                if(byteQueue != null && byteQueue.size() > 0) {
-                    for(CMInputStream inputStream : inputStreams) {
-                        inputStream.send(byteQueue.remove(0));
+                if(!byteQueue.isEmpty()) {
+                    synchronized(byteQueue) {
+                        for(CMInputStream inputStream : inputStreams) {
+                            inputStream.send(byteQueue.remove(0));
+                        }
                     }
+                } else {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
             }
         }).start();
@@ -55,8 +63,14 @@ public class CMMultiStreamHandler implements ThreadStopCondition, ByteSender {
      * Create a new InputStream
      * @return The created InputStream
      */
-    public InputStream addInputStream() {
-        CMInputStream inputStream = new CMInputStream(this);
+    public CMTimedInputStream addTimedInputStream() {
+        CMTimedInputStream inputStream = new CMTimedInputStream(this);
+        this.inputStreams.add(inputStream);
+        return inputStream;
+    }
+
+    public CMConsumingInputStream addConsumingInputStream() {
+        CMConsumingInputStream inputStream = new CMConsumingInputStream(this);
         this.inputStreams.add(inputStream);
         return inputStream;
     }
@@ -82,7 +96,7 @@ public class CMMultiStreamHandler implements ThreadStopCondition, ByteSender {
      * Create a new OutputStream
      * @return The created OutputStream
      */
-    public OutputStream addOutputStream() {
+    public CMOutputStream addOutputStream() {
         CMOutputStream outputStream = new CMOutputStream(this);
         this.outputStreams.add(outputStream);
         return outputStream;
@@ -108,5 +122,15 @@ public class CMMultiStreamHandler implements ThreadStopCondition, ByteSender {
     @Override
     public boolean isClosed() {
         return this.owner.isClosed();
+    }
+
+    @Override
+    public void fireEvent(CMClientEvent event) {
+        this.owner.fireEvent(event);
+    }
+
+    @Override
+    public CMClient getEventClient() {
+        return this.owner;
     }
 }

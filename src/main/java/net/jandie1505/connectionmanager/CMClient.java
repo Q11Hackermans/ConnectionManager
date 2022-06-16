@@ -1,13 +1,10 @@
 package net.jandie1505.connectionmanager;
 
 import net.jandie1505.connectionmanager.enums.ClientClosedReason;
-import net.jandie1505.connectionmanager.events.CMClientByteReceivedEvent;
-import net.jandie1505.connectionmanager.events.CMClientClosedEvent;
-import net.jandie1505.connectionmanager.events.CMClientCreatedEvent;
-import net.jandie1505.connectionmanager.events.CMClientEvent;
+import net.jandie1505.connectionmanager.events.*;
 import net.jandie1505.connectionmanager.interfaces.ByteSender;
-import net.jandie1505.connectionmanager.interfaces.ThreadStopCondition;
-import net.jandie1505.connectionmanager.streams.CMInputStream;
+import net.jandie1505.connectionmanager.interfaces.StreamOwner;
+import net.jandie1505.connectionmanager.streams.CMTimedInputStream;
 import net.jandie1505.connectionmanager.streams.CMOutputStream;
 
 import java.io.Closeable;
@@ -18,55 +15,54 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
-public abstract class CMClient implements ThreadStopCondition, ByteSender, Closeable {
-    private Socket socket;
-    private List<CMClientEventListener> listeners;
-    private List<CMClientEvent> eventQueue;
+public abstract class CMClient implements StreamOwner, ByteSender, Closeable {
+    private final Socket socket;
+    private final List<CMClientEventListener> listeners;
+    private final List<CMClientEvent> eventQueue;
     private Thread managerThread;
     private Thread eventQueueThread;
-    private CMInputStream inputStream;
-    private CMOutputStream outputStream;
+    private final CMTimedInputStream inputStream;
+    private final CMOutputStream outputStream;
     private CMMultiStreamHandler multiStreamHandler;
+    private boolean closedEventFired;
 
     // SETUP
     public CMClient(Socket socket) {
-        this.listeners = new ArrayList<>();
-        this.setup1(socket, null);
+        this(socket, List.of(), (Object) null);
     }
 
     public CMClient(Socket socket, Collection<CMClientEventListener> listeners) {
-        this.listeners = new ArrayList<>();
-        this.listeners.addAll(listeners);
-        this.setup1(socket, null);
+        this(socket, listeners, (Object) null);
     }
 
     public CMClient(Socket socket, Object... constructorParameters) {
-        this.listeners = new ArrayList<>();
-        this.setup1(socket, constructorParameters);
+        this(socket, List.of(), constructorParameters);
     }
 
     public CMClient(Socket socket, Collection<CMClientEventListener> listeners, Object... constructorParameters) {
-        this.listeners = new ArrayList<>();
-        this.listeners.addAll(listeners);
-        this.setup1(socket, constructorParameters);
-    }
+        this.closedEventFired = false;
 
-    private void setup1(Socket socket, Object[] constructorParameters) {
         this.socket = socket;
 
-        this.inputStream = new CMInputStream(this);
+        this.inputStream = new CMTimedInputStream(this);
         this.outputStream = new CMOutputStream(this);
 
-        this.eventQueue = new ArrayList<>();
+        this.eventQueue = Collections.synchronizedList(new ArrayList<>());
+
+        this.listeners = new ArrayList<>();
+        this.listeners.addAll(listeners);
+
+        this.setup(constructorParameters);
 
         this.managerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
                     try {
                         if(stopcondition()) {
-                            this.close();
+                            this.close(ClientClosedReason.STOPCONDITION_TRIGGERED);
                         }
                     } catch(Exception ignored) {}
 
@@ -90,8 +86,8 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
 
         this.eventQueueThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
-                synchronized(this.eventQueue) {
-                    if(eventQueue != null && eventQueue.size() > 0) {
+                if(!eventQueue.isEmpty()) {
+                    synchronized(eventQueue) {
                         for(CMClientEventListener listener : this.listeners) {
                             try {
                                 listener.onEvent(eventQueue.get(0));
@@ -99,19 +95,21 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
                                 e.printStackTrace();
                             }
                         }
-                        eventQueue.remove(0);
                     }
+                    eventQueue.remove(0);
+                } else {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
             }
         });
         eventQueueThread.setName(this + "-EventHandlerThread");
         eventQueueThread.start();
 
-        this.setup(constructorParameters);
-
         new Thread(() -> {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -122,6 +120,7 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
     // FOR SUBCLASSES
     /**
      * For setup of subclasses
+     * @param constructorParameters Parameters from the constructor
      */
     protected void setup(Object[] constructorParameters) {}
 
@@ -162,10 +161,22 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
     /**
      * Close the connection, the Input/Output streams and shutdown the threads
      */
-    public void close() {
-        if(!this.isClosed()) {
-            this.fireEvent(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
-        }
+    public synchronized void close() {
+        try {
+            if(!this.closedEventFired) {
+                new Thread(() -> {
+                    Thread.currentThread().interrupt();
+                    for(CMClientEventListener listener : this.listeners) {
+                        try {
+                            listener.onEvent(new CMClientClosedEvent(this, ClientClosedReason.CONNECTION_CLOSED));
+                        } catch(Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+                this.closedEventFired = true;
+            }
+        } catch(Exception ignored) {}
         this.close1();
     }
 
@@ -176,12 +187,24 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
 
     /**
      * Close the connection, the Input/Output streams and shutdown the threads (with a specific reason)
-     *
+     * @param reason Reason why the client was closed
      */
-    public void close(ClientClosedReason reason) {
-        if(!this.isClosed()) {
-            this.fireEvent(new CMClientClosedEvent(this, reason));
-        }
+    public synchronized void close(ClientClosedReason reason) {
+        try {
+            if(!this.closedEventFired) {
+                new Thread(() -> {
+                    Thread.currentThread().interrupt();
+                    for(CMClientEventListener listener : this.listeners) {
+                        try {
+                            listener.onEvent(new CMClientClosedEvent(this, reason));
+                        } catch(Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+                this.closedEventFired = true;
+            }
+        } catch(Exception ignored) {}
         this.close1();
     }
 
@@ -213,7 +236,7 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
      * USE THIS INPUT STREAM INSTEAD OF THE SOCKET INPUT STREAM TO AVOID ERRORS!
      * @return InputStream
      */
-    public InputStream getInputStream() {
+    public CMTimedInputStream getInputStream() {
         return this.inputStream;
     }
 
@@ -223,7 +246,7 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
      * USE THIS OUTPUT STREAM INSTEAD OF THE SOCKET OUTPUT STREAM TO AVOID ERRORS!
      * @return OutputStream
      */
-    public OutputStream getOutputStream() {
+    public CMOutputStream getOutputStream() {
         return this.outputStream;
     }
 
@@ -281,15 +304,13 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
 
     // BYTE RECEIVING AND SENDING
     public void sendByte(int data) {
-        try {
-            if(data >= 0 && data <= 255) {
+        if(!this.isClosed()) {
+            try {
                 this.socket.getOutputStream().write(data);
-            } else {
-                throw new IllegalArgumentException("A byte can only be in range of 0-255");
+            } catch(IOException e) {
+                this.close(ClientClosedReason.NO_REASON);
+                this.fireEvent(new CMClientErrorEvent(this, e));
             }
-        } catch(IOException e) {
-            this.close(ClientClosedReason.NO_REASON);
-            e.printStackTrace();
         }
     }
 
@@ -302,9 +323,14 @@ public abstract class CMClient implements ThreadStopCondition, ByteSender, Close
     }
 
     // EVENTS
-    protected void fireEvent(CMClientEvent event) {
+    public void fireEvent(CMClientEvent event) {
         synchronized(this.eventQueue) {
             eventQueue.add(event);
         }
+    }
+
+    @Override
+    public CMClient getEventClient() {
+        return this;
     }
 }

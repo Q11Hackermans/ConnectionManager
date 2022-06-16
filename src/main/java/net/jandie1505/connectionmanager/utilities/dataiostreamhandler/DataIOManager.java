@@ -6,63 +6,75 @@ import net.jandie1505.connectionmanager.events.CMClientEvent;
 import net.jandie1505.connectionmanager.server.CMSClient;
 import net.jandie1505.connectionmanager.server.CMSServer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class DataIOManager {
     private CMSServer server;
     private final List<DataIOStreamHandler> handlers;
     private final List<DataIOEventListener> listeners;
-    private CMClientEventListener clientEventlistener;
     private final DataIOType type;
-    private final boolean useMultiStreamHandler;
+    private final DataIOStreamType inputStreamType;
     private boolean opened;
 
-    public DataIOManager(CMSServer server, DataIOType type, boolean useMultiStreamHandler) {
+    public DataIOManager(CMSServer server, DataIOType type, DataIOStreamType inputStreamType) {
         this.server = server;
-        this.handlers = new ArrayList<>();
+        this.handlers = Collections.synchronizedList(new ArrayList<>());
         this.listeners = new ArrayList<>();
         this.type = type;
-        this.useMultiStreamHandler = useMultiStreamHandler;
+        this.inputStreamType = inputStreamType;
         this.opened = true;
         this.setup();
     }
 
     private void setup() {
-        this.clientEventlistener = event -> {
-            if(this.opened) {
-                handlers.add(new DataIOStreamHandler(event.getClient(), type, useMultiStreamHandler));
-            }
-        };
-
-        Thread garbageCollector = new Thread(() -> {
+        Thread dataIOManagerThread = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted() && this.opened && server != null && !server.isClosed()) {
                 try {
-                    handlers.removeIf(DataIOStreamHandler::isClosed);
-                    handlers.remove(null);
+                    synchronized(this.handlers) {
+                        handlers.removeIf(DataIOStreamHandler::isClosed);
+                        handlers.remove(null);
+
+                        for(CMSClient client : server.getClientList()) {
+                            if(getHandlerByClient(client) == null) {
+                                DataIOStreamHandler handler = new DataIOStreamHandler(client, type, inputStreamType);
+                                for(DataIOEventListener listener : listeners) {
+                                    handler.addEventListener(listener);
+                                }
+                                handlers.add(handler);
+                            }
+                        }
+                    }
                 } catch(Exception e) {
                     Thread.currentThread().interrupt();
                     close();
                     e.printStackTrace();
                 }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
         });
-        garbageCollector.setName("DATAIO-MANAGER-GARBAGECOLLECTOR " +  this);
-        garbageCollector.setDaemon(true);
-        garbageCollector.start();
+        dataIOManagerThread.setName("DATAIO-MANAGER- " +  this);
+        dataIOManagerThread.start();
     }
 
     /**
-     * This will return the DataIOHandler with a specifc UUID.
+     * This will return the DataIOStreamHandler with a specifc UUID.
      * Returns null if the Client is not a CMSClient or if no handler with the specified UUID is found.
-     * @param uuid
+     * @param uuid UUID
      * @return DataIOStreamHandler (when found) or null (when not found or CMClient is not a CMSClient)
      */
     public DataIOStreamHandler getHandlerByClientUUID(UUID uuid) {
-        for(DataIOStreamHandler handler : this.handlers) {
-            if(handler.getClient() instanceof CMSClient && ((CMSClient) handler.getClient()).getUniqueId().equals(uuid)) {
-                return handler;
+        return this.getHandlerByClient(server.getClientById(uuid));
+    }
+
+    public DataIOStreamHandler getHandlerByClient(CMSClient client) {
+        synchronized(this.handlers) {
+            for(DataIOStreamHandler handler : this.handlers) {
+                if(handler.getClient() == client) {
+                    return handler;
+                }
             }
         }
         return null;
@@ -89,11 +101,13 @@ public class DataIOManager {
     }
 
     public void close() {
-        if(this.server != null) {
-            this.server.getGlobalListeners().remove(clientEventlistener);
-        }
         for(DataIOStreamHandler handler : this.handlers) {
-            handler.close();
+            try {
+                handler.close();
+            } catch(Exception e) {
+                System.err.println("[CM] Error while closing handler: " + e + ": " + Arrays.toString(e.getStackTrace()));
+            }
+
         }
         this.opened = false;
         this.server = null;

@@ -2,6 +2,7 @@ package net.jandie1505.connectionmanager.utilities.dataiostreamhandler;
 
 import net.jandie1505.connectionmanager.CMClient;
 import net.jandie1505.connectionmanager.streams.CMInputStream;
+import net.jandie1505.connectionmanager.streams.CMTimedInputStream;
 import net.jandie1505.connectionmanager.streams.CMOutputStream;
 import net.jandie1505.connectionmanager.utilities.dataiostreamhandler.events.*;
 
@@ -14,23 +15,30 @@ public class DataIOStreamHandler {
     private InputStream inputStream;
     private OutputStream outputStream;
     private boolean opened;
-    private List<DataIOEventListener> listeners;
-    private DataIOType listeningType;
+    private final List<DataIOEventListener> listeners;
+    private final DataIOType listeningType;
     private Thread thread;
     private Thread eventQueueThread;
-    private List<DataIOEvent> eventQueue;
+    private final List<DataIOEvent> eventQueue;
+    private final DataIOStreamType inputStreamType;
 
-    public DataIOStreamHandler(CMClient client, DataIOType type, boolean useMultiStreamHandler) {
+    public DataIOStreamHandler(CMClient client, DataIOType type, DataIOStreamType inputStreamType) {
         this.client = client;
         this.listeners = new ArrayList<>();
         this.listeningType = type;
         this.eventQueue = new ArrayList<>();
         this.opened = true;
-        if(useMultiStreamHandler) {
+        this.inputStreamType = inputStreamType;
+
+        if(inputStreamType == DataIOStreamType.MULTI_STREAM_HANDLER_TIMED || inputStreamType == DataIOStreamType.MULTI_STREAM_HANDLER_CONSUMING) {
             if(client.getMultiStreamHandler() == null) {
                 this.client.enableMultiStreamHandler();
             }
-            this.inputStream = this.client.getMultiStreamHandler().addInputStream();
+            if(inputStreamType == DataIOStreamType.MULTI_STREAM_HANDLER_CONSUMING) {
+                this.inputStream = this.client.getMultiStreamHandler().addConsumingInputStream();
+            } else {
+                this.inputStream = this.client.getMultiStreamHandler().addTimedInputStream();
+            }
             this.outputStream = this.client.getMultiStreamHandler().addOutputStream();
         } else {
             this.inputStream = client.getInputStream();
@@ -81,6 +89,10 @@ public class DataIOStreamHandler {
                         }
                     }
                     eventQueue.remove(0);
+                } else {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ignored) {}
                 }
             }
         });
@@ -90,42 +102,42 @@ public class DataIOStreamHandler {
 
     // SEND
 
-    public void writeBoolean(boolean v) throws IOException {
+    public synchronized void writeBoolean(boolean v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeBoolean(v);
     }
 
-    public void writeShort(short v) throws IOException {
+    public synchronized void writeShort(short v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeShort(v);
     }
 
-    public void writeChar(char v) throws IOException {
+    public synchronized void writeChar(char v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeChar(v);
     }
 
-    public void writeInt(int v) throws IOException {
+    public synchronized void writeInt(int v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeInt(v);
     }
 
-    public void writeLong(long v) throws IOException {
+    public synchronized void writeLong(long v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeLong(v);
     }
 
-    public void writeFloat(float v) throws IOException {
+    public synchronized void writeFloat(float v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeFloat(v);
     }
 
-    public void writeDouble(double v) throws IOException {
+    public synchronized void writeDouble(double v) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeDouble(v);
     }
 
-    public void writeUTF(String str) throws IOException {
+    public synchronized void writeUTF(String str) throws IOException {
         DataOutputStream out = new DataOutputStream(this.outputStream);
         out.writeUTF(str);
     }
@@ -168,18 +180,22 @@ public class DataIOStreamHandler {
     public void close() {
         this.thread.interrupt();
         this.eventQueueThread.interrupt();
+
         try {
             this.thread.stop();
         } catch(Exception e) {
             e.printStackTrace();
         }
+
         try {
             this.eventQueueThread.stop();
         } catch(Exception e) {
             e.printStackTrace();
         }
+
         this.opened = false;
-        if(this.client.getMultiStreamHandler() != null) {
+
+        if(this.client != null && this.client.getMultiStreamHandler() != null) {
             if(this.client.getMultiStreamHandler().getInputStreams().contains((CMInputStream) this.inputStream)) {
                 this.client.getMultiStreamHandler().removeInputStream(this.client.getMultiStreamHandler().getInputStreams().indexOf((CMInputStream) this.inputStream));
             }
@@ -187,6 +203,7 @@ public class DataIOStreamHandler {
                 this.client.getMultiStreamHandler().removeOutputStream(this.client.getMultiStreamHandler().getOutputStreams().indexOf((CMOutputStream) this.outputStream));
             }
         }
+
         this.client = null;
         this.inputStream = null;
         this.outputStream = null;

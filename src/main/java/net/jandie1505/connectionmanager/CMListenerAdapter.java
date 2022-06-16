@@ -1,9 +1,6 @@
 package net.jandie1505.connectionmanager;
 
-import net.jandie1505.connectionmanager.events.CMClientByteReceivedEvent;
-import net.jandie1505.connectionmanager.events.CMClientClosedEvent;
-import net.jandie1505.connectionmanager.events.CMClientCreatedEvent;
-import net.jandie1505.connectionmanager.events.CMClientEvent;
+import net.jandie1505.connectionmanager.events.*;
 import net.jandie1505.connectionmanager.server.CMSServerEventListener;
 import net.jandie1505.connectionmanager.server.events.*;
 import net.jandie1505.connectionmanager.utilities.dataiostreamhandler.DataIOEventListener;
@@ -18,6 +15,10 @@ public abstract class CMListenerAdapter implements CMClientEventListener, CMSSer
     public void onClientClosed(CMClientClosedEvent event) {}
 
     public void onClientByteReceived(CMClientByteReceivedEvent event) {}
+
+    public void onClientInputStreamByteLimitReached(CMClientInputStreamByteLimitReachedEvent event) {}
+
+    public void onClientError(CMClientErrorEvent event) {}
 
     public void onUnknownClientEvent(CMClientEvent event) {}
 
@@ -63,6 +64,10 @@ public abstract class CMListenerAdapter implements CMClientEventListener, CMSSer
             onClientClosed((CMClientClosedEvent) event);
         } else if(event instanceof CMClientByteReceivedEvent) {
             onClientByteReceived((CMClientByteReceivedEvent) event);
+        } else if(event instanceof CMClientInputStreamByteLimitReachedEvent) {
+            onClientInputStreamByteLimitReached((CMClientInputStreamByteLimitReachedEvent) event);
+        } else if(event instanceof CMClientErrorEvent) {
+            onClientError((CMClientErrorEvent) event);
         } else {
             onUnknownClientEvent(event);
         }
