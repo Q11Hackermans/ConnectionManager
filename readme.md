@@ -21,7 +21,7 @@ ConnectionManager is a library for managing Java TCP Socket Connections.
 ## Import
 
 ### From Jitpack
-```
+```xml
 <repositories>
   <repository>
     <id>jitpack.io</id>
@@ -29,7 +29,7 @@ ConnectionManager is a library for managing Java TCP Socket Connections.
   </repository>
 </repositories>
 ```
-```
+```xml
 <dependency>
     <groupId>com.github.jandie1505</groupId>
     <artifactId>ConnectionManager</artifactId>
