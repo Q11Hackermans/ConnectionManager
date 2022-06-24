@@ -50,7 +50,7 @@ public class CMSServer {
             public void run() {
                 while(!Thread.currentThread().isInterrupted() && !server.isClosed() && isOperational()) {
                     synchronized(clients) {
-                        for(UUID uuid : getClients().keySet()) {
+                        for(UUID uuid : Map.copyOf(getClients()).keySet()) {
                             CMSClient client = clients.get(uuid);
                             if(client == null || client.isClosed()) {
                                 clients.remove(uuid);
