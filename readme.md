@@ -1,7 +1,8 @@
 # ConnectionManager
 
-[![CodeFactor](https://www.codefactor.io/repository/github/jandie1505/connectionmanager/badge)](https://www.codefactor.io/repository/github/jandie1505/connectionmanager)
+![](https://img.shields.io/badge/Java-11-blue)
 [![](https://jitpack.io/v/jandie1505/ConnectionManager.svg)](https://jitpack.io/#jandie1505/ConnectionManager)
+[![CodeFactor](https://www.codefactor.io/repository/github/jandie1505/connectionmanager/badge)](https://www.codefactor.io/repository/github/jandie1505/connectionmanager)
   
 A java socket management library
 
@@ -20,7 +21,7 @@ ConnectionManager is a library for managing Java TCP Socket Connections.
 ## Import
 
 ### From Jitpack
-```
+```xml
 <repositories>
   <repository>
     <id>jitpack.io</id>
@@ -28,7 +29,7 @@ ConnectionManager is a library for managing Java TCP Socket Connections.
   </repository>
 </repositories>
 ```
-```
+```xml
 <dependency>
     <groupId>com.github.jandie1505</groupId>
     <artifactId>ConnectionManager</artifactId>

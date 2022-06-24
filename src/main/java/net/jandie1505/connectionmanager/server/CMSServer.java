@@ -72,7 +72,7 @@ public class CMSServer {
             while(!Thread.currentThread().isInterrupted() && !server.isClosed() && this.isOperational()) {
                 if(eventQueue.size() > 0) {
                     synchronized(this.eventQueue) {
-                        for(CMSServerEventListener listener : this.listeners) {
+                        for(CMSServerEventListener listener : List.copyOf(this.listeners)) {
                             try {
                                 listener.onEvent(eventQueue.get(0));
                             } catch(Exception e) {
