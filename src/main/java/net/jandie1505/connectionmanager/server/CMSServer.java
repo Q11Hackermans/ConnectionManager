@@ -50,7 +50,8 @@ public class CMSServer {
             public void run() {
                 while(!Thread.currentThread().isInterrupted() && !server.isClosed() && isOperational()) {
                     synchronized(clients) {
-                        for(UUID uuid : getClients().keySet()) {
+                        Map<UUID, CMSClient> clientsCopy = Map.copyOf(clients);
+                        for(UUID uuid : clientsCopy.keySet()) {
                             CMSClient client = clients.get(uuid);
                             if(client == null || client.isClosed()) {
                                 clients.remove(uuid);
@@ -72,7 +73,7 @@ public class CMSServer {
             while(!Thread.currentThread().isInterrupted() && !server.isClosed() && this.isOperational()) {
                 if(eventQueue.size() > 0) {
                     synchronized(this.eventQueue) {
-                        for(CMSServerEventListener listener : this.listeners) {
+                        for(CMSServerEventListener listener : List.copyOf(this.listeners)) {
                             try {
                                 listener.onEvent(eventQueue.get(0));
                             } catch(Exception e) {
