@@ -346,7 +346,17 @@ public class CMSServer {
      * @return boolean
      */
     public boolean isOperational() {
-        return this.garbageCollection.isAlive() && this.eventQueueThread.isAlive() && this.thread.isAlive() && this.pendingClientsThread.isAlive();
+        boolean operationalCondition = this.garbageCollection.isAlive() && this.eventQueueThread.isAlive() && this.thread.isAlive() && this.pendingClientsThread.isAlive();
+
+        try {
+            if(!operationalCondition) {
+                this.close();
+            }
+        } catch (Exception ignored) {
+            // NOT REQUIRED
+        }
+
+        return operationalCondition;
     }
 
     // LISTENERS
