@@ -34,7 +34,11 @@ public class CMSServer {
     private final List<CMClientEventListener> globalClientListeners;
 
     // SETUP
-    public CMSServer(int port) throws IOException {
+    public CMSServer(int port) throws Exception {
+        this(port, null);
+    }
+
+    public CMSServer(int port, List<CMSServerEventListener> listeners) throws IOException {
         this.server = new ServerSocket(port);
         this.clients = Collections.synchronizedMap(new HashMap<>());
         this.defaultConnectionBehavior = ConnectionBehavior.REFUSE;
@@ -42,7 +46,11 @@ public class CMSServer {
         this.connectionReactionTime = 1000;
         this.eventQueue = Collections.synchronizedList(new ArrayList<>());
 
-        this.listeners = new ArrayList<>();
+        if(listeners != null) {
+            this.listeners = new ArrayList<>(listeners);
+        } else {
+            this.listeners = new ArrayList<>();
+        }
 
         this.globalClientListeners = new ArrayList<>();
 
