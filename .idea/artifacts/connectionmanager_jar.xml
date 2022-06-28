@@ -1,8 +1,8 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="ConnectionManager:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/ConnectionManager_jar</output-path>
-    <root id="archive" name="ConnectionManager.jar">
-      <element id="module-output" name="ConnectionManager" />
+  <artifact type="jar" name="connectionmanager:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/connectionmanager_jar</output-path>
+    <root id="archive" name="connectionmanager.jar">
+      <element id="module-output" name="connectionmanager" />
     </root>
   </artifact>
 </component>

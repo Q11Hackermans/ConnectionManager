@@ -34,7 +34,7 @@ public class CMSServer {
     private final List<CMClientEventListener> globalClientListeners;
 
     // SETUP
-    public CMSServer(int port) throws Exception {
+    public CMSServer(int port) throws IOException {
         this(port, null);
     }
 
