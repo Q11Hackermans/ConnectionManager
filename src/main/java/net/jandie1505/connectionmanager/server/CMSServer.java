@@ -8,6 +8,8 @@ import net.jandie1505.connectionmanager.server.events.*;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.*;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 
 /**
  * Server (CMS = ConnectionManager Server)
@@ -44,10 +46,18 @@ public class CMSServer {
 
         this.globalClientListeners = new ArrayList<>();
 
+        CyclicBarrier startBarrier = new CyclicBarrier(5);
+
         // This will remove all clients which are disconnected
         this.garbageCollection = new Thread(new Runnable() {
             @Override
             public void run() {
+                try {
+                    startBarrier.await();
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    Thread.currentThread().interrupt();
+                }
+
                 while(!Thread.currentThread().isInterrupted() && !server.isClosed() && isOperational()) {
                     synchronized(clients) {
                         Map<UUID, CMSClient> clientsCopy = Map.copyOf(clients);
@@ -70,6 +80,12 @@ public class CMSServer {
         this.garbageCollection.setDaemon(true);
 
         this.eventQueueThread = new Thread(() -> {
+            try {
+                startBarrier.await();
+            } catch (InterruptedException | BrokenBarrierException ignored) {
+                Thread.currentThread().interrupt();
+            }
+
             while(!Thread.currentThread().isInterrupted() && !server.isClosed() && this.isOperational()) {
                 if(eventQueue.size() > 0) {
                     synchronized(this.eventQueue) {
@@ -93,6 +109,12 @@ public class CMSServer {
         eventQueueThread.setName(this + "-EventHandlerThread");
 
         this.pendingClientsThread = new Thread(() -> {
+            try {
+                startBarrier.await();
+            } catch (InterruptedException | BrokenBarrierException ignored) {
+                Thread.currentThread().interrupt();
+            }
+
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed() && this.isOperational()) {
                 synchronized(pendingConnections) {
                     Map<UUID, CMSPendingClient> pendingConnectionsCopy = Map.copyOf(pendingConnections);
@@ -135,6 +157,12 @@ public class CMSServer {
         this.pendingClientsThread.setName(this + "-PendingClientsThread");
 
         this.thread = new Thread(() -> {
+            try {
+                startBarrier.await();
+            } catch (InterruptedException | BrokenBarrierException ignored) {
+                Thread.currentThread().interrupt();
+            }
+
             while(!Thread.currentThread().isInterrupted() && !this.server.isClosed() && this.isOperational()) {
                 try {
                     CMSPendingClient client = new CMSPendingClient(server.accept(), connectionReactionTime);
@@ -159,6 +187,12 @@ public class CMSServer {
         this.eventQueueThread.start();
         this.pendingClientsThread.start();
         this.thread.start();
+
+        try {
+            startBarrier.await();
+        } catch (InterruptedException | BrokenBarrierException ignored) {
+            Thread.currentThread().interrupt();
+        }
 
         this.fireEvent(new CMSServerStartedEvent(this));
     }
