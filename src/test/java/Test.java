@@ -19,7 +19,7 @@ public class Test implements CMClientEventListener, CMSServerEventListener, Data
     private static long timeEnd;
 
     public static void main(String[] args) throws Exception {
-        performanceTest();
+        restartTest();
     }
 
     private static void performanceTest() throws Exception {
@@ -97,6 +97,33 @@ public class Test implements CMClientEventListener, CMSServerEventListener, Data
                 "End time: " + timeEnd + "ms\n" +
                 "REQUIRED TIME: " + time + "ms\n" +
                 "------------------------------------------------\n");
+    }
+
+    public static void restartTest() throws Exception {
+        System.out.println("started");
+
+        CMSServer server = new CMSServer(26677);
+
+        Thread.sleep(10000);
+
+        int count = 100;
+        while (count >= 0 && (!server.isClosed() && server.isOperational())) {
+            server.close();
+
+            Thread.sleep(1000);
+
+            server = new CMSServer(26677);
+            server.addListener(new Test());
+            server.addGlobalListener(new Test());
+
+            Thread.sleep(10000);
+
+            System.out.println("next");
+
+            count--;
+        }
+
+        System.out.println("finished");
     }
 
     @Override
